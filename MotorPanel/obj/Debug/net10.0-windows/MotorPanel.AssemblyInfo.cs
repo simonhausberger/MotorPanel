@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MotorPanel")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a87b59999975a755fe4874eaea04734443fb0572")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+53b36c2393dc93c643c94916f51e52313ee27a23")]
 [assembly: System.Reflection.AssemblyProductAttribute("MotorPanel")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MotorPanel")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

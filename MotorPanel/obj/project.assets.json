@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\Motor-Panel\\Motor-Panel\\MotorPanel\\MotorPanel\\MotorPanel.csproj",
+      "projectUniqueName": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel.csproj",
       "projectName": "MotorPanel",
-      "projectPath": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\Motor-Panel\\Motor-Panel\\MotorPanel\\MotorPanel\\MotorPanel.csproj",
+      "projectPath": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel.csproj",
       "packagesPath": "C:\\Users\\simoh\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\Motor-Panel\\Motor-Panel\\MotorPanel\\MotorPanel\\obj\\",
+      "outputPath": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
