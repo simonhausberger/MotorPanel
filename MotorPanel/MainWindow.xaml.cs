@@ -19,6 +19,7 @@ namespace MotorPanel
         public MainWindow()
         {
             InitializeComponent();
+            //test
         }
     }
 }
