@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "XtaAmg4eK0c=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\simoh\\.nuget\\packages\\syncfusion.licensing\\32.2.4\\syncfusion.licensing.32.2.4.nupkg.sha512",
+    "C:\\Users\\simoh\\.nuget\\packages\\syncfusion.sfgauge.wpf\\32.2.4\\syncfusion.sfgauge.wpf.32.2.4.nupkg.sha512",
+    "C:\\Users\\simoh\\.nuget\\packages\\syncfusion.shared.wpf\\32.2.4\\syncfusion.shared.wpf.32.2.4.nupkg.sha512"
+  ],
+  "logs": []
+}

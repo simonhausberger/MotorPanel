@@ -1,0 +1,216 @@
+{
+  "version": 3,
+  "targets": {
+    "net8.0-windows7.0": {
+      "Syncfusion.Licensing/32.2.4": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/Syncfusion.Licensing.dll": {}
+        },
+        "runtime": {
+          "lib/net8.0/Syncfusion.Licensing.dll": {}
+        }
+      },
+      "Syncfusion.SfGauge.WPF/32.2.4": {
+        "type": "package",
+        "dependencies": {
+          "Syncfusion.Licensing": "32.2.4",
+          "Syncfusion.Shared.WPF": "32.2.4"
+        },
+        "compile": {
+          "lib/net8.0-windows7.0/Syncfusion.SfGauge.WPF.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0-windows7.0/Syncfusion.SfGauge.WPF.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Syncfusion.Shared.WPF/32.2.4": {
+        "type": "package",
+        "dependencies": {
+          "Syncfusion.Licensing": "32.2.4"
+        },
+        "compile": {
+          "lib/net8.0-windows7.0/Syncfusion.Shared.WPF.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0-windows7.0/Syncfusion.Shared.WPF.dll": {
+            "related": ".xml"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Syncfusion.Licensing/32.2.4": {
+      "sha512": "B4WbXCFWF5vvrjB2sGydfIV1+PV2wbIhcJgIERhtOtvCQFdrUDL0LsjJZvAruqFn9IVaeQQYqCy78IwZsuvWqA==",
+      "type": "package",
+      "path": "syncfusion.licensing/32.2.4",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.txt",
+        "README.md",
+        "lib/net10.0/Syncfusion.Licensing.dll",
+        "lib/net462/Syncfusion.Licensing.dll",
+        "lib/net8.0/Syncfusion.Licensing.dll",
+        "lib/net9.0/Syncfusion.Licensing.dll",
+        "lib/netstandard2.0/Syncfusion.Licensing.dll",
+        "lib/uap10.0/Syncfusion.Licensing.dll",
+        "syncfusion.licensing.32.2.4.nupkg.sha512",
+        "syncfusion.licensing.nuspec",
+        "syncfusion_logo.png"
+      ]
+    },
+    "Syncfusion.SfGauge.WPF/32.2.4": {
+      "sha512": "P1fZvH8DJKfIIjtrtVtnH3RozKdKVuT0zjZEg2HZWOQPKS57dMPPKcGu0gV8zmKBLINsnNpEpA3tqHO4VNMOEA==",
+      "type": "package",
+      "path": "syncfusion.sfgauge.wpf/32.2.4",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.txt",
+        "README.md",
+        "lib/net10.0-windows7.0/Design/Syncfusion.SfGauge.WPF.DesignTools.dll",
+        "lib/net10.0-windows7.0/Syncfusion.SfGauge.WPF.dll",
+        "lib/net10.0-windows7.0/Syncfusion.SfGauge.WPF.xml",
+        "lib/net462/Design/Syncfusion.Design.Wpf.dll",
+        "lib/net462/Design/Syncfusion.SfGauge.WPF.DesignTools.dll",
+        "lib/net462/Design/Syncfusion.SfGauge.WPF.Expression.Design.dll",
+        "lib/net462/Design/Syncfusion.SfGauge.WPF.VisualStudio.Design.dll",
+        "lib/net462/Syncfusion.SfGauge.WPF.dll",
+        "lib/net462/Syncfusion.SfGauge.WPF.xml",
+        "lib/net8.0-windows7.0/Design/Syncfusion.SfGauge.WPF.DesignTools.dll",
+        "lib/net8.0-windows7.0/Syncfusion.SfGauge.WPF.dll",
+        "lib/net8.0-windows7.0/Syncfusion.SfGauge.WPF.xml",
+        "lib/net9.0-windows7.0/Design/Syncfusion.SfGauge.WPF.DesignTools.dll",
+        "lib/net9.0-windows7.0/Syncfusion.SfGauge.WPF.dll",
+        "lib/net9.0-windows7.0/Syncfusion.SfGauge.WPF.xml",
+        "syncfusion.sfgauge.wpf.32.2.4.nupkg.sha512",
+        "syncfusion.sfgauge.wpf.nuspec",
+        "syncfusion_logo.png",
+        "tools/VisualStudioToolsManifest.xml"
+      ]
+    },
+    "Syncfusion.Shared.WPF/32.2.4": {
+      "sha512": "v0qbejox2XPH0+WgWZr1rFOENxrEGxKznefbgt6JzkMCUjSfy5C4EMrLFYr/DGD7MUZBScLAo+ZRhrj8wmq81g==",
+      "type": "package",
+      "path": "syncfusion.shared.wpf/32.2.4",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.txt",
+        "README.md",
+        "lib/net10.0-windows7.0/Design/Syncfusion.Shared.WPF.DesignTools.dll",
+        "lib/net10.0-windows7.0/Syncfusion.Shared.WPF.dll",
+        "lib/net10.0-windows7.0/Syncfusion.Shared.WPF.xml",
+        "lib/net462/Design/Syncfusion.Design.Wpf.dll",
+        "lib/net462/Design/Syncfusion.Shared.WPF.DesignTools.dll",
+        "lib/net462/Design/Syncfusion.Shared.Wpf.Expression.Design.dll",
+        "lib/net462/Design/Syncfusion.Shared.Wpf.VisualStudio.Design.dll",
+        "lib/net462/Design/Syncfusion.Shared.Wpf.dll.Design.dll",
+        "lib/net462/Syncfusion.Shared.WPF.dll",
+        "lib/net462/Syncfusion.Shared.WPF.xml",
+        "lib/net8.0-windows7.0/Design/Syncfusion.Shared.WPF.DesignTools.dll",
+        "lib/net8.0-windows7.0/Syncfusion.Shared.WPF.dll",
+        "lib/net8.0-windows7.0/Syncfusion.Shared.WPF.xml",
+        "lib/net9.0-windows7.0/Design/Syncfusion.Shared.WPF.DesignTools.dll",
+        "lib/net9.0-windows7.0/Syncfusion.Shared.WPF.dll",
+        "lib/net9.0-windows7.0/Syncfusion.Shared.WPF.xml",
+        "syncfusion.shared.wpf.32.2.4.nupkg.sha512",
+        "syncfusion.shared.wpf.nuspec",
+        "syncfusion_logo.png",
+        "tools/VisualStudioToolsManifest.xml"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net8.0-windows7.0": [
+      "Syncfusion.SfGauge.WPF >= 32.2.4"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\simoh\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel.csproj",
+      "projectName": "MotorPanel",
+      "projectPath": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel.csproj",
+      "packagesPath": "C:\\Users\\simoh\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\obj\\",
+      "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
+      "configFilePaths": [
+        "C:\\Users\\simoh\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net8.0-windows"
+      ],
+      "sources": {
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net8.0-windows7.0": {
+          "targetAlias": "net8.0-windows",
+          "projectReferences": {}
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "10.0.100"
+    },
+    "frameworks": {
+      "net8.0-windows7.0": {
+        "targetAlias": "net8.0-windows",
+        "dependencies": {
+          "Syncfusion.SfGauge.WPF": {
+            "target": "Package",
+            "version": "[32.2.4, )"
+          }
+        },
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          },
+          "Microsoft.WindowsDesktop.App.WPF": {
+            "privateAssets": "none"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

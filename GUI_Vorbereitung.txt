@@ -1,0 +1,22 @@
+GUI: von µC zu GUI
+
+-> Geschwindigkeit n[1/min] 	-> Tacho
+-> PCB Temp[°C]; Motor Temp[°C]	-> Linear Gauge
+-> Status LED (error;grün)
+foc:
+-> vd, vq[V]; id, iq[A]		-> Zeitverlauf
+block:
+-> U_bus[V]; I_bus[A]		->Zeitverlauf
+
+
+GUI: von GUI zu µC
+
+-> Geschwindigkeit-Sollwert[1/min]
+-> anfordern der Steuermethode (ob block oder foc)
+-> Start; Stop
+-> Drehrichtung
+foc:
+-> ob sl oder sensored			-> Schalter(Button)
+-> ob Drehmoment oder Drehzahlregelung 	-> Schalter(Button)
+-> Drehmoment iq-Sollwert[A]
+block:

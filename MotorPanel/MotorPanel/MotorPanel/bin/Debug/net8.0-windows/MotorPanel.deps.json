@@ -1,0 +1,78 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "MotorPanel/1.0.0": {
+        "dependencies": {
+          "Syncfusion.SfGauge.WPF": "32.2.4"
+        },
+        "runtime": {
+          "MotorPanel.dll": {}
+        }
+      },
+      "Syncfusion.Licensing/32.2.4": {
+        "runtime": {
+          "lib/net8.0/Syncfusion.Licensing.dll": {
+            "assemblyVersion": "32.2.4.0",
+            "fileVersion": "32.2.4.0"
+          }
+        }
+      },
+      "Syncfusion.SfGauge.WPF/32.2.4": {
+        "dependencies": {
+          "Syncfusion.Licensing": "32.2.4",
+          "Syncfusion.Shared.WPF": "32.2.4"
+        },
+        "runtime": {
+          "lib/net8.0-windows7.0/Syncfusion.SfGauge.WPF.dll": {
+            "assemblyVersion": "32.2.4.0",
+            "fileVersion": "32.2.4.0"
+          }
+        }
+      },
+      "Syncfusion.Shared.WPF/32.2.4": {
+        "dependencies": {
+          "Syncfusion.Licensing": "32.2.4"
+        },
+        "runtime": {
+          "lib/net8.0-windows7.0/Syncfusion.Shared.WPF.dll": {
+            "assemblyVersion": "32.2.4.0",
+            "fileVersion": "32.2.4.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "MotorPanel/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Syncfusion.Licensing/32.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-B4WbXCFWF5vvrjB2sGydfIV1+PV2wbIhcJgIERhtOtvCQFdrUDL0LsjJZvAruqFn9IVaeQQYqCy78IwZsuvWqA==",
+      "path": "syncfusion.licensing/32.2.4",
+      "hashPath": "syncfusion.licensing.32.2.4.nupkg.sha512"
+    },
+    "Syncfusion.SfGauge.WPF/32.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-P1fZvH8DJKfIIjtrtVtnH3RozKdKVuT0zjZEg2HZWOQPKS57dMPPKcGu0gV8zmKBLINsnNpEpA3tqHO4VNMOEA==",
+      "path": "syncfusion.sfgauge.wpf/32.2.4",
+      "hashPath": "syncfusion.sfgauge.wpf.32.2.4.nupkg.sha512"
+    },
+    "Syncfusion.Shared.WPF/32.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-v0qbejox2XPH0+WgWZr1rFOENxrEGxKznefbgt6JzkMCUjSfy5C4EMrLFYr/DGD7MUZBScLAo+ZRhrj8wmq81g==",
+      "path": "syncfusion.shared.wpf/32.2.4",
+      "hashPath": "syncfusion.shared.wpf.32.2.4.nupkg.sha512"
+    }
+  }
+}
