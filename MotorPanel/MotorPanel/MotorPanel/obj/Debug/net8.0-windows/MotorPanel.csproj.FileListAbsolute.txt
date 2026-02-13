@@ -24,3 +24,11 @@ C:\Users\simoh\OneDrive - HTL Anichstrasse\Diplomarbeit_Infineon\C_KLEINLERCHER\
 C:\Users\simoh\OneDrive - HTL Anichstrasse\Diplomarbeit_Infineon\C_KLEINLERCHER\MotorPanel\MotorPanel\MotorPanel\MotorPanel\obj\Debug\net8.0-windows\MotorPanel.genruntimeconfig.cache
 C:\Users\simoh\OneDrive - HTL Anichstrasse\Diplomarbeit_Infineon\C_KLEINLERCHER\MotorPanel\MotorPanel\MotorPanel\MotorPanel\obj\Debug\net8.0-windows\ref\MotorPanel.dll
 C:\Users\simoh\OneDrive - HTL Anichstrasse\Diplomarbeit_Infineon\C_KLEINLERCHER\MotorPanel\MotorPanel\MotorPanel\MotorPanel\obj\Debug\net8.0-windows\MotorPanel_MarkupCompile.lref
+C:\Users\simoh\OneDrive - HTL Anichstrasse\Diplomarbeit_Infineon\C_KLEINLERCHER\MotorPanel\MotorPanel\MotorPanel\MotorPanel\bin\Debug\net8.0-windows\Syncfusion.SfChart.WPF.dll
+C:\Users\simoh\OneDrive - HTL Anichstrasse\Diplomarbeit_Infineon\C_KLEINLERCHER\MotorPanel\MotorPanel\MotorPanel\MotorPanel\bin\Debug\net8.0-windows\Syncfusion.SfSkinManager.WPF.dll
+C:\Users\simoh\OneDrive - HTL Anichstrasse\Diplomarbeit_Infineon\C_KLEINLERCHER\MotorPanel\MotorPanel\MotorPanel\MotorPanel\bin\Debug\net8.0-windows\ControlzEx.dll
+C:\Users\simoh\OneDrive - HTL Anichstrasse\Diplomarbeit_Infineon\C_KLEINLERCHER\MotorPanel\MotorPanel\MotorPanel\MotorPanel\bin\Debug\net8.0-windows\MahApps.Metro.dll
+C:\Users\simoh\OneDrive - HTL Anichstrasse\Diplomarbeit_Infineon\C_KLEINLERCHER\MotorPanel\MotorPanel\MotorPanel\MotorPanel\bin\Debug\net8.0-windows\Microsoft.Xaml.Behaviors.dll
+C:\Users\simoh\OneDrive - HTL Anichstrasse\Diplomarbeit_Infineon\C_KLEINLERCHER\MotorPanel\MotorPanel\MotorPanel\MotorPanel\bin\Debug\net8.0-windows\Syncfusion.SfInput.WPF.dll
+C:\Users\simoh\OneDrive - HTL Anichstrasse\Diplomarbeit_Infineon\C_KLEINLERCHER\MotorPanel\MotorPanel\MotorPanel\MotorPanel\bin\Debug\net8.0-windows\ToggleSwitch.dll
+C:\Users\simoh\OneDrive - HTL Anichstrasse\Diplomarbeit_Infineon\C_KLEINLERCHER\MotorPanel\MotorPanel\MotorPanel\MotorPanel\bin\Debug\net8.0-windows\de\MahApps.Metro.resources.dll

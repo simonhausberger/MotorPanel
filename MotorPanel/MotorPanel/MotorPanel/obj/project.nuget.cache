@@ -1,12 +1,20 @@
 {
   "version": 2,
-  "dgSpecHash": "XtaAmg4eK0c=",
+  "dgSpecHash": "StVS2/wnx/g=",
   "success": true,
   "projectFilePath": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\simoh\\.nuget\\packages\\controlzex\\4.4.0\\controlzex.4.4.0.nupkg.sha512",
+    "C:\\Users\\simoh\\.nuget\\packages\\mahapps.metro\\2.4.11\\mahapps.metro.2.4.11.nupkg.sha512",
+    "C:\\Users\\simoh\\.nuget\\packages\\microsoft.xaml.behaviors.wpf\\1.1.19\\microsoft.xaml.behaviors.wpf.1.1.19.nupkg.sha512",
     "C:\\Users\\simoh\\.nuget\\packages\\syncfusion.licensing\\32.2.4\\syncfusion.licensing.32.2.4.nupkg.sha512",
+    "C:\\Users\\simoh\\.nuget\\packages\\syncfusion.sfchart.wpf\\32.2.4\\syncfusion.sfchart.wpf.32.2.4.nupkg.sha512",
     "C:\\Users\\simoh\\.nuget\\packages\\syncfusion.sfgauge.wpf\\32.2.4\\syncfusion.sfgauge.wpf.32.2.4.nupkg.sha512",
-    "C:\\Users\\simoh\\.nuget\\packages\\syncfusion.shared.wpf\\32.2.4\\syncfusion.shared.wpf.32.2.4.nupkg.sha512"
+    "C:\\Users\\simoh\\.nuget\\packages\\syncfusion.sfinput.wpf\\32.2.4\\syncfusion.sfinput.wpf.32.2.4.nupkg.sha512",
+    "C:\\Users\\simoh\\.nuget\\packages\\syncfusion.sfskinmanager.wpf\\32.2.4\\syncfusion.sfskinmanager.wpf.32.2.4.nupkg.sha512",
+    "C:\\Users\\simoh\\.nuget\\packages\\syncfusion.shared.wpf\\32.2.4\\syncfusion.shared.wpf.32.2.4.nupkg.sha512",
+    "C:\\Users\\simoh\\.nuget\\packages\\system.text.json\\4.7.2\\system.text.json.4.7.2.nupkg.sha512",
+    "C:\\Users\\simoh\\.nuget\\packages\\toggleswitch\\1.2.0\\toggleswitch.1.2.0.nupkg.sha512"
   ],
   "logs": []
 }
