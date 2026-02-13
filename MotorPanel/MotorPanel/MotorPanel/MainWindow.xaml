@@ -8,10 +8,36 @@
         xmlns:gauge ="clr-namespace:Syncfusion.UI.Xaml.Gauges;assembly=Syncfusion.SfGauge.Wpf"
         xmlns:chart="clr-namespace:Syncfusion.UI.Xaml.Charts;assembly=Syncfusion.SfChart.WPF"
         mc:Ignorable="d"
-        Title="Motor-Panel" Height="800" Width="1000">
+        Title="Motor-Panel" Height="800" Width="1500" Loaded="Window_Loaded">
 
+    <DockPanel LastChildFill="True">
+        <!-- Menü-Leiste oben -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="connection">
+                <StackPanel Orientation="Horizontal" Margin="5">
 
-    <Grid Margin="10">
+                    <TextBlock Text="COM:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <ComboBox x:Name="ComboBoxComPorts" Width="80" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    
+                    <Button x:Name="BtnConnect" Content="connect" Width="60" Margin="0,0,5,0" Click="BtnConnect_Click"/>
+                    <Button x:Name="BtnDisconnect" Content="disconnect" Width="70" Margin="0,0,20,0" Click="BtnDisconnect_Click"/>
+                    <Button x:Name="BtnRefresh" Content="refresh" Width="60" Click="BtnRefresh_Click"/>
+                </StackPanel>
+            </MenuItem>
+            
+            <MenuItem Header="test">
+                <MenuItem Header="start self-test" Click="MenuItemSelfTest_Click" />
+            </MenuItem>
+            
+            <MenuItem Header="info">
+            </MenuItem>
+            
+            <MenuItem Header="help">
+            </MenuItem>
+        </Menu>
+        
+        
+        <Grid Margin="10">
         <!-- 7 Zeilen -->
         <Grid.RowDefinitions>
             <RowDefinition Height="400*" />
@@ -25,12 +51,12 @@
 
         <!-- 8 Spalten -->
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="550*" />
+            <ColumnDefinition Width="500*" />
             <ColumnDefinition Width="100*" />
             <ColumnDefinition Width="470*" />
             <ColumnDefinition Width="400*" />
-            <ColumnDefinition Width="00*" />
-            <ColumnDefinition Width="400*" />
+            <ColumnDefinition Width="30*" />
+            <ColumnDefinition Width="350*" />
             <ColumnDefinition Width="100*" />
             <ColumnDefinition Width="550*" />
         </Grid.ColumnDefinitions>
@@ -452,7 +478,7 @@
         <!-- Target-Box -->
         <GroupBox Header="motor-targets"
           Grid.Row="4"
-          Grid.RowSpan="2"
+          Grid.RowSpan="3"
           Grid.Column="2"
           Grid.ColumnSpan="1"
           Margin="10"
@@ -461,9 +487,10 @@
             <Grid Margin="10">
 
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="20*"/>
-                    <RowDefinition Height="20*"/>
-                    <RowDefinition Height="20*"/>
+                    <RowDefinition Height="30*"/>
+                    <RowDefinition Height="30*"/>
+                    <RowDefinition Height="30*"/>
+                    <RowDefinition Height="40*"/>
 
                 </Grid.RowDefinitions>
 
@@ -486,7 +513,7 @@
                  Height="18"
                  HorizontalContentAlignment="Center"
                  VerticalContentAlignment="Center"
-                 HorizontalAlignment="Stretch"/>
+                 HorizontalAlignment="Stretch" TextChanged="txtbTargetSpeed_TextChanged"/>
 
                 <!-- Iq Sollwert -->
                 <TextBlock Text="target Iq [A]:"
@@ -501,15 +528,113 @@
                  Height="18"
                  HorizontalContentAlignment="Center"
                  VerticalContentAlignment="Center"
-                 HorizontalAlignment="Stretch"/>
+                 HorizontalAlignment="Stretch" TextChanged="txtbTargetIq_TextChanged"/>
 
 
                 <!-- Button -->
-                <Button Grid.Row="2"
+                    <Button x:Name="BtnApplyTarget"
+                    Grid.Row="2"
                 Grid.ColumnSpan="2"
                 Margin="5"
-                Height="20"
-                Content="Apply Target"/>
+                Height="32"
+                Content="apply target"
+                FontWeight="SemiBold"
+                Background="#757575 "
+                Foreground="White"
+                BorderThickness="0"
+                Cursor="Hand" Click="BtnApplyTarget_Click">  
+
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border"
+                    Background="{TemplateBinding Background}"
+                    CornerRadius="8"
+                    Padding="10,4">
+                                <ContentPresenter 
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"/>
+                            </Border>
+
+                            <ControlTemplate.Triggers>
+
+                                <!-- Hover -->
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border"
+                            Property="Background"
+                            Value="#3A3A3D"/>
+                                </Trigger>
+
+                                <!-- Klick -->
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="border"
+                            Property="Background"
+                            Value="#1F1F22"/>
+                                </Trigger>
+
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+
+                <!-- Speed / Torque Mode -->
+                <Grid Grid.Row="3" Grid.ColumnSpan="2" Margin="5">
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="80"/>
+                        <ColumnDefinition Width="70"/>
+                        <ColumnDefinition Width="80"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="speed"
+               Grid.Column="0"
+               VerticalAlignment="Center"
+               HorizontalAlignment="Right"/>
+
+                    <CheckBox x:Name="SwitchControlMode"
+              Grid.Column="1"
+              Width="60"
+              Height="30"
+              IsChecked="false"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center" Click="SwitchControlMode_Click">
+
+                        <CheckBox.Template>
+                            <ControlTemplate TargetType="CheckBox">
+                                <Grid Width="60" Height="30">
+
+                                    <Border Background="LightGray"
+                            CornerRadius="15"/>
+
+                                    <Ellipse x:Name="Knob"
+                             Width="26"
+                             Height="26"
+                             Fill="White"
+                             Margin="2,2,32,2"/>
+                                </Grid>
+
+                                <ControlTemplate.Triggers>
+
+                                    <!-- nur Bewegung -->
+                                    <Trigger Property="IsChecked" Value="True">
+                                        <Setter TargetName="Knob"
+                                Property="Margin"
+                                Value="32,2,2,2"/>
+                                    </Trigger>
+
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </CheckBox.Template>
+                    </CheckBox>
+
+                    <TextBlock Text="torque"
+               Grid.Column="2"
+               VerticalAlignment="Center"
+               HorizontalAlignment="Left"/>
+
+                </Grid>
+
+
 
             </Grid>
         </GroupBox>
@@ -522,7 +647,7 @@
           Margin="10"
           FontWeight="SemiBold">
 
-            <StackPanel Orientation="Vertical" Margin="10" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <StackPanel Orientation="Vertical" Margin="10" HorizontalAlignment="Stretch" VerticalAlignment="Top">
                 <!-- Enable/Disable Switch ganz oben -->
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
@@ -536,7 +661,7 @@
 
                     <TextBlock Grid.Column="0" Text="disabled" VerticalAlignment="Center" HorizontalAlignment="Right"/>
 
-                    <CheckBox x:Name="SwitchEnableMotor" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <CheckBox x:Name="SwitchEnableMotor" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" Click="SwitchEnableMotor_Click">
                         <CheckBox.Template>
                             <ControlTemplate TargetType="CheckBox">
                                 <Grid Width="60" Height="30">
@@ -574,7 +699,7 @@
 
                     <TextBlock Grid.Column="0" Text="stop" VerticalAlignment="Center" HorizontalAlignment="Right"/>
 
-                    <CheckBox x:Name="SwitchStartStop" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <CheckBox x:Name="SwitchStartStop" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" Click="SwitchStartStop_Click">
                         <CheckBox.Template>
                             <ControlTemplate TargetType="CheckBox">
                                 <Grid Width="60" Height="30">
@@ -602,7 +727,7 @@
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0" Text="left" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                    <CheckBox x:Name="SwitchDirection" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <CheckBox x:Name="SwitchDirection" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" Click="SwitchDirection_Click">
                         <CheckBox.Template>
                             <ControlTemplate TargetType="CheckBox">
                                 <Grid Width="60" Height="30">
@@ -629,7 +754,7 @@
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0" Text="block" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                    <CheckBox x:Name="SwitchBlockFoc" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <CheckBox x:Name="SwitchBlockFoc" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" Click="SwitchBlockFoc_Click">
                         <CheckBox.Template>
                             <ControlTemplate TargetType="CheckBox">
                                 <Grid Width="60" Height="30">
@@ -655,8 +780,8 @@
                         <ColumnDefinition Width="70"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0" Text="sensorless" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                    <CheckBox x:Name="SwitchCommutation" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Grid.Column="0" Text="sensored" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <CheckBox x:Name="SwitchSensor" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" Click="SwitchSensor_Click">
                         <CheckBox.Template>
                             <ControlTemplate TargetType="CheckBox">
                                 <Grid Width="60" Height="30">
@@ -671,13 +796,120 @@
                             </ControlTemplate>
                         </CheckBox.Template>
                     </CheckBox>
-                    <TextBlock Grid.Column="2" Text="sensored" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    <TextBlock Grid.Column="2" Text="sensorless" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                 </Grid>
 
             </StackPanel>
         </GroupBox>
 
+        <!-- Event Log -->
+        <GroupBox Header="event-logs"
+          Grid.Row="4"
+          Grid.RowSpan="2"
+          Grid.Column="5"
+          Grid.ColumnSpan="3"
+          Margin="10"
+          FontWeight="SemiBold">
 
+            <Grid Margin="8">
+                <ListBox x:Name="EventLogListBox"
+                 HorizontalAlignment="Stretch"
+                 VerticalAlignment="Stretch"
+                 FontFamily="Consolas"
+                 FontSize="12"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- status leds -->
+        <GroupBox Header="status"
+          Grid.Row="6"
+          Grid.Column="5"
+          Grid.ColumnSpan="3"
+          Margin="10"
+          FontWeight="SemiBold">
+
+            <StackPanel Orientation="Horizontal"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Margin="10"
+                >
+
+                <!-- ERROR -->
+                <StackPanel Orientation="Horizontal" Margin="15,5">
+                    <Ellipse x:Name="LedError"
+                             Width="14"
+                             Height="14"
+                             Fill="Red">
+                        <Ellipse.Effect>
+                            <DropShadowEffect Color="Red"
+                                BlurRadius="10"
+                                ShadowDepth="0"
+                                Opacity="0.8"/>
+                        </Ellipse.Effect>
+                    </Ellipse>
+                    <TextBlock Text=" error"
+                       VerticalAlignment="Center"
+                       Margin="5,0"/>
+                </StackPanel>
+
+                <!-- WARNING -->
+                <StackPanel Orientation="Horizontal" Margin="15,5">
+                    <Ellipse x:Name="LedWarning"
+                             Width="14"
+                             Height="14"
+                             Fill="Orange">
+                        <Ellipse.Effect>
+                            <DropShadowEffect Color="Orange"
+                          BlurRadius="10"
+                          ShadowDepth="0"
+                          Opacity="0.8"/>
+                        </Ellipse.Effect>
+                    </Ellipse>
+                    <TextBlock Text=" warning"
+                       VerticalAlignment="Center"
+                       Margin="5,0"/>
+                </StackPanel>
+
+                <!-- ENABLED -->
+                <StackPanel Orientation="Horizontal" Margin="15,5">
+                    <Ellipse x:Name="LedEnabled"
+                             Width="14"
+                             Height="14"
+                             Fill="Green">
+                        <Ellipse.Effect>
+                                <DropShadowEffect Color="Green"
+                          BlurRadius="10"
+                          ShadowDepth="0"
+                          Opacity="0.8"/>
+                        </Ellipse.Effect>
+                    </Ellipse>
+                    <TextBlock Text=" enabled"
+                       VerticalAlignment="Center"
+                       Margin="5,0"/>
+                </StackPanel>
+
+                <!-- CONNECTED -->
+                <StackPanel Orientation="Horizontal" Margin="15,5">
+                    <Ellipse x:Name="LedConnected"
+                             Width="14"
+                             Height="14"
+                             Fill="Green">
+                        <Ellipse.Effect>
+                                <DropShadowEffect Color="Green"
+                          BlurRadius="10"
+                          ShadowDepth="0"
+                          Opacity="0.8"/>
+                        </Ellipse.Effect>
+                    </Ellipse>
+                    <TextBlock Text=" connected"
+                       VerticalAlignment="Center"
+                       Margin="5,0"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+        
+        
+        
     </Grid>
-
+    </DockPanel>
 </Window>
