@@ -12,6 +12,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MotorPanel
 {
@@ -20,9 +21,12 @@ namespace MotorPanel
     /// </summary>
     public partial class MainWindow : Window
     {
-        // TEST
         SerialPort Serial1;
         const int baudRate = 115200;
+
+        const byte StartByte = 0xAA;
+        const int FloatCount = 12;
+        const int PacketSize = 1 + FloatCount * 4; // 49 Bytes
 
         double TargedSpeed;
         double TargedIq;
@@ -239,111 +243,120 @@ namespace MotorPanel
             EventLogListBox.ScrollIntoView(EventLogListBox.Items[0]);
         }
         // ----------------------------------------------------- receiving - event handler ---------------------------------------------------
+        // reihenfolge receiving: speed, torque, IBus, VBus, PCBTemp, WindingTemp, id, iq, vd, vq, error, warning
         private void Serial1_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            int bytesToRead = Serial1.BytesToRead;
-            if (bytesToRead % 2 != 0)
-                return; // unvollständiges Paket ignorieren, zum bsp. wenn erst 1/2 angekommen ist
-
-            byte[] buffer = new byte[bytesToRead];
-            Serial1.Read(buffer, 0, buffer.Length);
-
-            // GUI-Update im UI-Thread
-            Dispatcher.Invoke(() =>
+            while (Serial1.BytesToRead >= PacketSize)
             {
-                for (int i = 0; i < buffer.Length; i += 2)
+                // Prüfen ob erstes Byte Startbyte ist
+                if (Serial1.ReadByte() != StartByte)
                 {
-                    // High- und Low-Byte zusammenfügen
-                    ushort value = (ushort)((buffer[i] << 8) | buffer[i + 1]);
-
-                    // Beispiel: je nach Index dem richtigen Sensor zuweisen
-                    switch (i / 2)
-                    {
-                        case 0:
-                            NeedleSpeed.Value = value;
-                            PointerSpeed.Value = value;
-                            break;
-                        case 1:
-                            NeedleTorque.Value = value; 
-                            PointerTorque.Value = value;
-                            break;
-                        case 2:
-                            PointerIBus.Value = value;
-                            NeedleIBus.Value = value;
-                            break;
-                        case 3:
-                            PointerVBus.Value = value;
-                            NeedleVBus.Value = value;
-                            break;
-                        case 4:
-                            PointerPCBTemp.Value = value;
-                            BarPCBTemp.Value = value;
-                            break;
-                        case 5:
-                            PointerWindingTemp.Value = value;
-                            BarWindingTemp.Value = value;
-                            break;
-                        case 6:
-                            double id = value;
-                            idData.Add(new ChartPoint { X = time, Y = id });
-                            if (idData.Count > 300)
-                                idData.RemoveAt(0);
-                            break;
-                        case 7:
-                            double iq = value;
-                            iqData.Add(new ChartPoint { X = time, Y = iq });
-                            if (iqData.Count > 300)
-                                iqData.RemoveAt(0);
-                            break;
-                        case 8:
-                            double vd = value;
-                            vdData.Add(new ChartPoint { X = time, Y = vd });
-                            if (vdData.Count > 300)
-                                vdData.RemoveAt(0);
-                            break;
-                        case 9:
-                            double vq = value;
-                            vqData.Add(new ChartPoint { X = time, Y = vq });
-                            if (vqData.Count > 300)
-                                vqData.RemoveAt(0);
-                            break;
-                        case 10:
-                            bool error = value == 1;
-                            LedError.Fill = error ? Brushes.Red : Brushes.WhiteSmoke;
-                            break;
-                        case 11:
-                            bool warning = value == 1;
-                            LedWarning.Fill = warning ? Brushes.Orange : Brushes.WhiteSmoke;
-                            break;
-                    }
+                    continue; // solange lesen bis 0xAA gefunden wird
                 }
-                CurrentChart.InvalidateVisual();
-                VoltageChart.InvalidateVisual();
-                time += 0.02;
-            });
+
+                byte[] buffer = new byte[FloatCount * 4];
+                Serial1.Read(buffer, 0, buffer.Length);
+
+                Dispatcher.Invoke(() =>
+                {
+                    for (int i = 0; i < FloatCount; i++)
+                    {
+                        float value = BitConverter.ToSingle(buffer, i * 4);
+
+                        switch (i)
+                        {
+                            case 0:
+                                NeedleSpeed.Value = value;
+                                PointerSpeed.Value = value;
+                                break;
+
+                            case 1:
+                                NeedleTorque.Value = value;
+                                PointerTorque.Value = value;
+                                break;
+
+                            case 2:
+                                PointerIBus.Value = value;
+                                NeedleIBus.Value = value;
+                                break;
+
+                            case 3:
+                                PointerVBus.Value = value;
+                                NeedleVBus.Value = value;
+                                break;
+
+                            case 4:
+                                PointerPCBTemp.Value = value;
+                                BarPCBTemp.Value = value;
+                                break;
+
+                            case 5:
+                                PointerWindingTemp.Value = value;
+                                BarWindingTemp.Value = value;
+                                break;
+
+                            case 6:
+                                idData.Add(new ChartPoint { X = time, Y = value });
+                                if (idData.Count > 300)
+                                    idData.RemoveAt(0);
+                                break;
+
+                            case 7:
+                                iqData.Add(new ChartPoint { X = time, Y = value });
+                                if (iqData.Count > 300)
+                                    iqData.RemoveAt(0);
+                                break;
+
+                            case 8:
+                                vdData.Add(new ChartPoint { X = time, Y = value });
+                                if (vdData.Count > 300)
+                                    vdData.RemoveAt(0);
+                                break;
+
+                            case 9:
+                                vqData.Add(new ChartPoint { X = time, Y = value });
+                                if (vqData.Count > 300)
+                                    vdData.RemoveAt(0);
+                                break;
+
+                            case 10:
+                                LedError.Fill = value == 1f ? Brushes.Red : Brushes.WhiteSmoke;
+                                break;
+
+                            case 11:
+                                LedWarning.Fill = value == 1f ? Brushes.Orange : Brushes.WhiteSmoke;
+                                break;
+                        }
+                    }
+
+                    CurrentChart.InvalidateVisual();
+                    VoltageChart.InvalidateVisual();
+                    time += 0.1;
+                });
+            }
         }
         // ----------------------------------------------------- sending packets -------------------------------------------------------------
-        // Reihenfolge: TargetSpeed, TargetIq, ControlMode, EnableMotor, StartStop, Direction, FOC/Block, Sensored/Sensorless
+        // reihenfolge sending: TargetSpeed, TargetIq, ControlMode, EnableMotor, StartStop, Direction, FOC/Block, Sensored/Sensorless
         private void SendControlPacket()
         {
             if (Serial1 == null || !Serial1.IsOpen)
                 return;
 
-            ushort targetSpeed = 0;
-            ushort targetIq = 0;
+            float targetSpeed = 0f;
+            float targetIq = 0f;
 
-            ushort.TryParse(txtbTargetSpeed.Text, out targetSpeed);
-            ushort.TryParse(txtbTargetIq.Text, out targetIq);
+            float.TryParse(txtbTargetSpeed.Text, out targetSpeed);
+            float.TryParse(txtbTargetIq.Text, out targetIq);
 
-            // bool → ushort
-            ushort controlMode = (ushort)(SpeedOrTorque ? 1 : 0);
-            ushort enableMotor = (ushort)(SwitchEnableMotor.IsChecked == true ? 1 : 0);
-            ushort startStop = (ushort)(SwitchStartStop.IsChecked == true ? 1 : 0);
-            ushort direction = (ushort)(SwitchDirection.IsChecked == true ? 1 : 0);
-            ushort focBlock = (ushort)(SwitchBlockFoc.IsChecked == true ? 1 : 0);
-            ushort sensorMode = (ushort)(SwitchSensor.IsChecked == true ? 1 : 0);
+            // bool → float
+            float controlMode = SpeedOrTorque ? 1f : 0f;
+            float enableMotor = SwitchEnableMotor.IsChecked == true ? 1f : 0f;
+            float startStop = SwitchStartStop.IsChecked == true ? 1f : 0f;
+            float direction = SwitchDirection.IsChecked == true ? 1f : 0f;
+            float focBlock = SwitchBlockFoc.IsChecked == true ? 1f : 0f;
+            float sensorMode = SwitchSensor.IsChecked == true ? 1f : 0f;
 
-            ushort[] values =
+            float[] values =
             {
                 targetSpeed,
                 targetIq,
@@ -355,25 +368,18 @@ namespace MotorPanel
                 sensorMode
             };
 
-            byte[] packet = new byte[values.Length * 2 + 2]; // +2 für Checksum
-            int index = 0;
+            const byte StartByte = 0xAA;
+            byte[] packet = new byte[1 + values.Length * 4]; // 1 Byte Startbyte + 4 Byte pro float
+            packet[0] = StartByte;
 
-            ushort checksum = 0;
+            int index = 1; // da ja Start nach Startbyte
 
-            foreach (ushort val in values)
+            foreach (float val in values)
             {
-                byte high = (byte)(val >> 8);
-                byte low = (byte)(val & 0xFF);
-
-                packet[index++] = high;
-                packet[index++] = low;
-
-                checksum += val;
+                byte[] bytes = BitConverter.GetBytes(val); // Little Endian float
+                Array.Copy(bytes, 0, packet, index, 4);
+                index += 4;
             }
-
-            // einfache 16-bit Checksum
-            packet[index++] = (byte)(checksum >> 8);
-            packet[index++] = (byte)(checksum & 0xFF);
 
             try
             {
@@ -415,6 +421,7 @@ namespace MotorPanel
 
                 SpeedOrTorque = true;
             }
+
             SendControlPacket();
         }
 
@@ -432,6 +439,7 @@ namespace MotorPanel
                 DisableOrEnable = true;
                 LedEnabled.Fill = Brushes.WhiteSmoke;
             }
+
             SendControlPacket();
         }
 
@@ -447,6 +455,7 @@ namespace MotorPanel
                 LogEvent("motor stopped");
                 StopOrstart = true;
             }
+
             SendControlPacket();
         }
 
@@ -462,6 +471,7 @@ namespace MotorPanel
                 LogEvent("direction: left");
                 LeftOrRight = true;
             }
+
             SendControlPacket();
         }
 
@@ -477,6 +487,7 @@ namespace MotorPanel
                 LogEvent("block-commutation activated");
                 BlockOrFOC = true;
             }
+
             SendControlPacket();
         }
 
@@ -492,6 +503,7 @@ namespace MotorPanel
                 LogEvent("sensored mode activated");
                 SensOrSL = true;
             }
+
             SendControlPacket();
         }
 
