@@ -399,6 +399,7 @@ namespace MotorPanel
             {
                 LogEvent("switched to torque control (just in FOC available)");
                 SwitchBlockFoc.IsChecked = true;   // hier keine Blockkommutierung möglich
+                SwitchBlockFoc.IsEnabled = false;
                 txtbTargetSpeed.IsEnabled = false;
                 txtbTargetIq.IsEnabled = true;
 
