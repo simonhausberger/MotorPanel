@@ -1,32 +1,31 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel.csproj": {}
+    "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI_Hausberger\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel.csproj": {}
   },
   "projects": {
-    "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel.csproj": {
+    "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI_Hausberger\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel.csproj",
+        "projectUniqueName": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI_Hausberger\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel.csproj",
         "projectName": "MotorPanel",
-        "projectPath": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel.csproj",
-        "packagesPath": "C:\\Users\\simoh\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\obj\\",
+        "projectPath": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI_Hausberger\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel.csproj",
+        "packagesPath": "C:\\Users\\Matthias\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI_Hausberger\\MotorPanel\\MotorPanel\\MotorPanel\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Syncfusion\\Essential Studio\\WPF\\32.2.3\\ToolboxNuGetPackages"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\simoh\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Matthias\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Syncfusion Toolbox for WPF.config"
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net8.0-windows"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {

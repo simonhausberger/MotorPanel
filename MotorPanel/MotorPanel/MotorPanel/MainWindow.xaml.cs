@@ -20,6 +20,7 @@ namespace MotorPanel
     /// </summary>
     public partial class MainWindow : Window
     {
+        // TEST
         SerialPort Serial1;
         const int baudRate = 115200;
 

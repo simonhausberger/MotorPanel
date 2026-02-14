@@ -1,17 +1,17 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\",
+  "WorkspaceRootPath": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI_Hausberger\\MotorPanel\\MotorPanel\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\simoh\\onedrive - htl anichstrasse\\diplomarbeit_infineon\\c_kleinlercher\\motorpanel\\motorpanel\\motorpanel\\motorpanel\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\matthias\\desktop\\4ahet\\dipl\\gui_hausberger\\motorpanel\\motorpanel\\motorpanel\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\simoh\\onedrive - htl anichstrasse\\diplomarbeit_infineon\\c_kleinlercher\\motorpanel\\motorpanel\\motorpanel\\motorpanel\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\matthias\\desktop\\4ahet\\dipl\\gui_hausberger\\motorpanel\\motorpanel\\motorpanel\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\simoh\\onedrive - htl anichstrasse\\diplomarbeit_infineon\\c_kleinlercher\\motorpanel\\motorpanel\\motorpanel\\motorpanel\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\matthias\\desktop\\4ahet\\dipl\\gui_hausberger\\motorpanel\\motorpanel\\motorpanel\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
@@ -36,36 +36,34 @@
               "$type": "Document",
               "DocumentIndex": 2,
               "Title": "App.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\App.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI_Hausberger\\MotorPanel\\MotorPanel\\MotorPanel\\App.xaml.cs",
               "RelativeDocumentMoniker": "MotorPanel\\App.xaml.cs",
-              "ToolTip": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\App.xaml.cs",
+              "ToolTip": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI_Hausberger\\MotorPanel\\MotorPanel\\MotorPanel\\App.xaml.cs",
               "RelativeToolTip": "MotorPanel\\App.xaml.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAABnAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-13T13:40:33.799Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-13T13:40:33.799Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
               "Title": "MainWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MainWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI_Hausberger\\MotorPanel\\MotorPanel\\MotorPanel\\MainWindow.xaml",
               "RelativeDocumentMoniker": "MotorPanel\\MainWindow.xaml",
-              "ToolTip": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MainWindow.xaml",
+              "ToolTip": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI_Hausberger\\MotorPanel\\MotorPanel\\MotorPanel\\MainWindow.xaml",
               "RelativeToolTip": "MotorPanel\\MainWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-02-12T18:52:20.588Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-12T18:52:20.588Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "MainWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI_Hausberger\\MotorPanel\\MotorPanel\\MotorPanel\\MainWindow.xaml.cs",
               "RelativeDocumentMoniker": "MotorPanel\\MainWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI_Hausberger\\MotorPanel\\MotorPanel\\MotorPanel\\MainWindow.xaml.cs",
               "RelativeToolTip": "MotorPanel\\MainWindow.xaml.cs",
-              "ViewState": "AgIAAHgBAAAAAAAAAAAwwJoBAAAwAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAPAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-12T18:52:19.773Z",
               "EditorCaption": ""
