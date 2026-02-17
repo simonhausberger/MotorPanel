@@ -149,7 +149,7 @@
                          RimStrokeThickness="3"
                          LabelOffset="0.1"
                          StartValue="0"
-                         EndValue="5">
+                         EndValue="2.5">
 
                     <gauge:CircularScale.MajorTickSettings>
                         <gauge:MajorTickSetting Length="10"
@@ -365,7 +365,7 @@
                          RimStrokeThickness="3"
                          LabelOffset="0.1"
                          StartValue="0"
-                         EndValue="25">
+                         EndValue="40">
 
                     <gauge:CircularScale.MajorTickSettings>
                         <gauge:MajorTickSetting Length="10"

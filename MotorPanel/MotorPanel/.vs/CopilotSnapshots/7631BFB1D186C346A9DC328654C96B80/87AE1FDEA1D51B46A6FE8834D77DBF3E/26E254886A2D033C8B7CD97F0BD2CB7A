@@ -280,15 +280,18 @@ namespace MotorPanel
                             switch (i)
                             {
                                 case 0:
-                                    // update measured speed (needle) only; keep pointer showing reference value
+                                    // remove any active animation so direct value assignment takes effect
                                     NeedleSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    PointerSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
                                     NeedleSpeed.Value = value;
+                                    PointerSpeed.Value = value;
                                     break;
 
                                 case 1:
-                                    // update measured torque (needle) only; keep pointer showing reference value
                                     NeedleTorque.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    PointerTorque.BeginAnimation(CircularPointer.ValueProperty, null);
                                     NeedleTorque.Value = value;
+                                    PointerTorque.Value = value;
                                     break;
 
                                 case 2:
@@ -354,8 +357,6 @@ namespace MotorPanel
                         // invalidate visuals to ensure redraw.
                         CurrentChart.InvalidateVisual();
                         VoltageChart.InvalidateVisual();
-                        if (stopwatch == null)
-                            time += 0.1;
                     }));
                 }
             }

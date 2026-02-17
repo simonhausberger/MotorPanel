@@ -13,7 +13,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MotorPanel
@@ -44,7 +43,6 @@ namespace MotorPanel
         ObservableCollection<ChartPoint> vdData = new();
         ObservableCollection<ChartPoint> vqData = new();
         double time = 0;
-        Stopwatch stopwatch;
 
         public MainWindow()
         {
@@ -67,9 +65,6 @@ namespace MotorPanel
 
             LogEvent("motor-panel opened");
             await StartupSelfTest();
-
-            // start stopwatch to provide accurate X axis timing (seconds)
-            stopwatch = Stopwatch.StartNew();
 
             // Listen mit chart verbinden, damit die Datenpunkte angezeigt werden können (z. B. Id, Iq, vd, vq)
             IdSeries.ItemsSource = idData;
@@ -272,7 +267,6 @@ namespace MotorPanel
                     // Use BeginInvoke to avoid blocking the serial thread
                     Dispatcher.BeginInvoke((Action)(() =>
                     {
-                        double t = stopwatch != null ? stopwatch.Elapsed.TotalSeconds : time;
                         for (int i = 0; i < FloatCount; i++)
                         {
                             float value = BitConverter.ToSingle(buffer, i * 4);
@@ -280,15 +274,18 @@ namespace MotorPanel
                             switch (i)
                             {
                                 case 0:
-                                    // update measured speed (needle) only; keep pointer showing reference value
+                                    // remove any active animation so direct value assignment takes effect
                                     NeedleSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    PointerSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
                                     NeedleSpeed.Value = value;
+                                    PointerSpeed.Value = value;
                                     break;
 
                                 case 1:
-                                    // update measured torque (needle) only; keep pointer showing reference value
                                     NeedleTorque.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    PointerTorque.BeginAnimation(CircularPointer.ValueProperty, null);
                                     NeedleTorque.Value = value;
+                                    PointerTorque.Value = value;
                                     break;
 
                                 case 2:
@@ -317,25 +314,25 @@ namespace MotorPanel
                                     break;
 
                                 case 6:
-                                    idData.Add(new ChartPoint { X = t, Y = value });
+                                    idData.Add(new ChartPoint { X = time, Y = value });
                                     if (idData.Count > 300)
                                         idData.RemoveAt(0);
                                     break;
 
                                 case 7:
-                                    iqData.Add(new ChartPoint { X = t, Y = value });
+                                    iqData.Add(new ChartPoint { X = time, Y = value });
                                     if (iqData.Count > 300)
                                         iqData.RemoveAt(0);
                                     break;
 
                                 case 8:
-                                    vdData.Add(new ChartPoint { X = t, Y = value });
+                                    vdData.Add(new ChartPoint { X = time, Y = value });
                                     if (vdData.Count > 300)
                                         vdData.RemoveAt(0);
                                     break;
 
                                 case 9:
-                                    vqData.Add(new ChartPoint { X = t, Y = value });
+                                    vqData.Add(new ChartPoint { X = time, Y = value });
                                     if (vqData.Count > 300)
                                         vqData.RemoveAt(0);
                                     break;
@@ -350,12 +347,23 @@ namespace MotorPanel
                             }
                         }
 
-                        // Additions to the ObservableCollection will notify the chart. Just
-                        // invalidate visuals to ensure redraw.
+                        // refresh charts (reassign ItemsSource to force update in case the chart
+                        // control doesn't observe collection changes)
+                        IdSeries.ItemsSource = null;
+                        IdSeries.ItemsSource = idData;
+
+                        IqSeries.ItemsSource = null;
+                        IqSeries.ItemsSource = iqData;
+
+                        vdSeries.ItemsSource = null;
+                        vdSeries.ItemsSource = vdData;
+
+                        vqSeries.ItemsSource = null;
+                        vqSeries.ItemsSource = vqData;
+
                         CurrentChart.InvalidateVisual();
                         VoltageChart.InvalidateVisual();
-                        if (stopwatch == null)
-                            time += 0.1;
+                        time += 0.1;
                     }));
                 }
             }
