@@ -163,7 +163,6 @@ namespace MotorPanel
             DoubleAnimation anim = new DoubleAnimation();
             anim.From = pointer.Value;
             anim.To = toValue;
-            anim.FillBehavior = FillBehavior.Stop;
             anim.Duration = TimeSpan.FromMilliseconds(400);
             pointer.BeginAnimation(CircularPointer.ValueProperty, anim);
         }
@@ -273,36 +272,26 @@ namespace MotorPanel
                             switch (i)
                             {
                                 case 0:
-                                    // remove any active animation so direct value assignment takes effect
-                                    NeedleSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    PointerSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
                                     NeedleSpeed.Value = value;
                                     PointerSpeed.Value = value;
                                     break;
 
                                 case 1:
-                                    NeedleTorque.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    PointerTorque.BeginAnimation(CircularPointer.ValueProperty, null);
                                     NeedleTorque.Value = value;
                                     PointerTorque.Value = value;
                                     break;
 
                                 case 2:
-                                    PointerIBus.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    NeedleIBus.BeginAnimation(CircularPointer.ValueProperty, null);
                                     PointerIBus.Value = value;
                                     NeedleIBus.Value = value;
                                     break;
 
                                 case 3:
-                                    PointerVBus.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    NeedleVBus.BeginAnimation(CircularPointer.ValueProperty, null);
                                     PointerVBus.Value = value;
                                     NeedleVBus.Value = value;
                                     break;
 
                                 case 4:
-                                    // PointerPCBTemp and BarPCBTemp are linear, assign directly
                                     PointerPCBTemp.Value = value;
                                     BarPCBTemp.Value = value;
                                     break;

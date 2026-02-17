@@ -302,7 +302,6 @@ namespace MotorPanel
                                     break;
 
                                 case 4:
-                                    // PointerPCBTemp and BarPCBTemp are linear, assign directly
                                     PointerPCBTemp.Value = value;
                                     BarPCBTemp.Value = value;
                                     break;

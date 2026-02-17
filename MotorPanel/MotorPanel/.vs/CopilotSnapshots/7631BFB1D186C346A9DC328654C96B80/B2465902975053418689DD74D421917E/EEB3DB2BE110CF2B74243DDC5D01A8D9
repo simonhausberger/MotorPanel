@@ -56,14 +56,14 @@ namespace MotorPanel
             public double X { get; set; }
             public double Y { get; set; }
         }
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             BtnConnect.IsEnabled = true;
             BtnDisconnect.IsEnabled = false;
             txtbTargetIq.IsEnabled = false;     // weil in speed-Regelung gestartet wird
 
             LogEvent("motor-panel opened");
-            await StartupSelfTest();
+            StartupSelfTest();
 
             // Listen mit chart verbinden, damit die Datenpunkte angezeigt werden können (z. B. Id, Iq, vd, vq)
             IdSeries.ItemsSource = idData;
@@ -152,10 +152,10 @@ namespace MotorPanel
             // Test-Log
             LogEvent("startup self-test done");
         }
-        private async void MenuItemSelfTest_Click(object sender, RoutedEventArgs e)
+        private void MenuItemSelfTest_Click(object sender, RoutedEventArgs e)
         {
             LogEvent("self-test started");
-            await StartupSelfTest();
+            StartupSelfTest();
             LogEvent("self-test finished");
         }
         private void AnimatePointer(CircularPointer pointer, double toValue)
@@ -163,7 +163,6 @@ namespace MotorPanel
             DoubleAnimation anim = new DoubleAnimation();
             anim.From = pointer.Value;
             anim.To = toValue;
-            anim.FillBehavior = FillBehavior.Stop;
             anim.Duration = TimeSpan.FromMilliseconds(400);
             pointer.BeginAnimation(CircularPointer.ValueProperty, anim);
         }
@@ -196,8 +195,6 @@ namespace MotorPanel
         {
             if (Serial1 != null && Serial1.IsOpen)
             {
-                // unsubscribe event handler before closing/disposing
-                Serial1.DataReceived -= Serial1_DataReceived;
                 Serial1.Close();
                 Serial1.Dispose();
                 Serial1 = null;
@@ -250,119 +247,93 @@ namespace MotorPanel
         // reihenfolge receiving: speed, torque, IBus, VBus, PCBTemp, WindingTemp, id, iq, vd, vq, error, warning
         private void Serial1_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            try
+            while (Serial1.BytesToRead >= PacketSize)
             {
-                while (Serial1.BytesToRead >= PacketSize)
+                // Prüfen ob erstes Byte Startbyte ist
+                if (Serial1.ReadByte() != StartByte)
                 {
-                    // Prüfen ob erstes Byte Startbyte ist
-                    if (Serial1.ReadByte() != StartByte)
+                    continue; // solange lesen bis 0xAA gefunden wird
+                }
+
+                byte[] buffer = new byte[FloatCount * 4];
+                Serial1.Read(buffer, 0, buffer.Length);
+
+                Dispatcher.Invoke(() =>
+                {
+                    for (int i = 0; i < FloatCount; i++)
                     {
-                        continue; // solange lesen bis 0xAA gefunden wird
+                        float value = BitConverter.ToSingle(buffer, i * 4);
+
+                        switch (i)
+                        {
+                            case 0:
+                                NeedleSpeed.Value = value;
+                                PointerSpeed.Value = value;
+                                break;
+
+                            case 1:
+                                NeedleTorque.Value = value;
+                                PointerTorque.Value = value;
+                                break;
+
+                            case 2:
+                                PointerIBus.Value = value;
+                                NeedleIBus.Value = value;
+                                break;
+
+                            case 3:
+                                PointerVBus.Value = value;
+                                NeedleVBus.Value = value;
+                                break;
+
+                            case 4:
+                                PointerPCBTemp.Value = value;
+                                BarPCBTemp.Value = value;
+                                break;
+
+                            case 5:
+                                PointerWindingTemp.Value = value;
+                                BarWindingTemp.Value = value;
+                                break;
+
+                            case 6:
+                                idData.Add(new ChartPoint { X = time, Y = value });
+                                if (idData.Count > 300)
+                                    idData.RemoveAt(0);
+                                break;
+
+                            case 7:
+                                iqData.Add(new ChartPoint { X = time, Y = value });
+                                if (iqData.Count > 300)
+                                    iqData.RemoveAt(0);
+                                break;
+
+                            case 8:
+                                vdData.Add(new ChartPoint { X = time, Y = value });
+                                if (vdData.Count > 300)
+                                    vdData.RemoveAt(0);
+                                break;
+
+                            case 9:
+                                vqData.Add(new ChartPoint { X = time, Y = value });
+                                if (vqData.Count > 300)
+                                    vdData.RemoveAt(0);
+                                break;
+
+                            case 10:
+                                LedError.Fill = value == 1f ? Brushes.Red : Brushes.WhiteSmoke;
+                                break;
+
+                            case 11:
+                                LedWarning.Fill = value == 1f ? Brushes.Orange : Brushes.WhiteSmoke;
+                                break;
+                        }
                     }
 
-                    byte[] buffer = new byte[FloatCount * 4];
-                    Serial1.Read(buffer, 0, buffer.Length);
-
-                    // Use BeginInvoke to avoid blocking the serial thread
-                    Dispatcher.BeginInvoke((Action)(() =>
-                    {
-                        for (int i = 0; i < FloatCount; i++)
-                        {
-                            float value = BitConverter.ToSingle(buffer, i * 4);
-
-                            switch (i)
-                            {
-                                case 0:
-                                    // remove any active animation so direct value assignment takes effect
-                                    NeedleSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    PointerSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    NeedleSpeed.Value = value;
-                                    PointerSpeed.Value = value;
-                                    break;
-
-                                case 1:
-                                    NeedleTorque.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    PointerTorque.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    NeedleTorque.Value = value;
-                                    PointerTorque.Value = value;
-                                    break;
-
-                                case 2:
-                                    PointerIBus.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    NeedleIBus.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    PointerIBus.Value = value;
-                                    NeedleIBus.Value = value;
-                                    break;
-
-                                case 3:
-                                    PointerVBus.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    NeedleVBus.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    PointerVBus.Value = value;
-                                    NeedleVBus.Value = value;
-                                    break;
-
-                                case 4:
-                                    // PointerPCBTemp and BarPCBTemp are linear, assign directly
-                                    PointerPCBTemp.Value = value;
-                                    BarPCBTemp.Value = value;
-                                    break;
-
-                                case 5:
-                                    PointerWindingTemp.Value = value;
-                                    BarWindingTemp.Value = value;
-                                    break;
-
-                                case 6:
-                                    idData.Add(new ChartPoint { X = time, Y = value });
-                                    if (idData.Count > 300)
-                                        idData.RemoveAt(0);
-                                    break;
-
-                                case 7:
-                                    iqData.Add(new ChartPoint { X = time, Y = value });
-                                    if (iqData.Count > 300)
-                                        iqData.RemoveAt(0);
-                                    break;
-
-                                case 8:
-                                    vdData.Add(new ChartPoint { X = time, Y = value });
-                                    if (vdData.Count > 300)
-                                        vdData.RemoveAt(0);
-                                    break;
-
-                                case 9:
-                                    vqData.Add(new ChartPoint { X = time, Y = value });
-                                    if (vqData.Count > 300)
-                                        vqData.RemoveAt(0);
-                                    break;
-
-                                case 10:
-                                    LedError.Fill = value == 1f ? Brushes.Red : Brushes.WhiteSmoke;
-                                    break;
-
-                                case 11:
-                                    LedWarning.Fill = value == 1f ? Brushes.Orange : Brushes.WhiteSmoke;
-                                    break;
-                            }
-                        }
-
-                        CurrentChart.InvalidateVisual();
-                        VoltageChart.InvalidateVisual();
-                        time += 0.1;
-                    }));
-                }
-            }
-            catch (Exception ex)
-            {
-                // Don't let serial exceptions crash the thread; log to UI if possible
-                try
-                {
-                    Dispatcher.BeginInvoke((Action)(() => LogEvent($"serial receive error: {ex.Message}")));
-                }
-                catch
-                {
-                    // ignore
-                }
+                    CurrentChart.InvalidateVisual();
+                    VoltageChart.InvalidateVisual();
+                    time += 0.1;
+                });
             }
         }
         // ----------------------------------------------------- sending packets -------------------------------------------------------------
