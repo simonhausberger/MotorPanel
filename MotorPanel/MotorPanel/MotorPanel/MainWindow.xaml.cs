@@ -214,6 +214,7 @@ namespace MotorPanel
             try
             {
                 Serial1 = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One);
+                Serial1.DataReceived += Serial1_DataReceived;
                 Serial1.Open(); // Port erfolgreich geöffnet
                 LogEvent("serial port opened");
                 LedConnected.Fill = Brushes.Green;
