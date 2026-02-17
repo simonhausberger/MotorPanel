@@ -393,18 +393,11 @@
                                    KnobFill="#757575"
                                    KnobStroke="#757575"
                                    NeedlePointerStrokeThickness="7" />
-                        <gauge:CircularPointer PointerType="RangePointer"
+                            <gauge:CircularPointer PointerType="RangePointer"
                                    Value="0"
                                    RangePointerStrokeThickness="5"
                                    RangePointerStroke="#27beb6" />
-                        <gauge:CircularPointer PointerType="SymbolPointer"
-                                   x:Name="PointerIBus"
-                                   Value="0"
-                                   SymbolPointerHeight="12"
-                                   SymbolPointerWidth="12"
-                                   Symbol="InvertedTriangle"
-                                   SymbolPointerStroke="#757575" />
-                    </gauge:CircularScale.Pointers>
+                        </gauge:CircularScale.Pointers>
                 </gauge:CircularScale>
             </gauge:SfCircularGauge.Scales>
         </gauge:SfCircularGauge>
@@ -463,13 +456,6 @@
                            Value="0"
                            RangePointerStrokeThickness="5"
                            RangePointerStroke="#27beb6" />
-                        <gauge:CircularPointer PointerType="SymbolPointer"
-                           x:Name="PointerVBus"
-                           Value="0"
-                           SymbolPointerHeight="12"
-                           SymbolPointerWidth="12"
-                           Symbol="InvertedTriangle"
-                           SymbolPointerStroke="#757575" />
                     </gauge:CircularScale.Pointers>
                 </gauge:CircularScale>
             </gauge:SfCircularGauge.Scales>

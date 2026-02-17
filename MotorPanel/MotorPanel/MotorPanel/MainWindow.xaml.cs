@@ -45,6 +45,8 @@ namespace MotorPanel
         ObservableCollection<ChartPoint> vqData = new();
         double time = 0;
         Stopwatch stopwatch;
+        double baseTime = 0; // time offset to keep X values small
+        const int MaxPoints = 300;
 
         public MainWindow()
         {
@@ -119,12 +121,12 @@ namespace MotorPanel
             // CircularPointer auf Max fahren
             AnimatePointer(NeedleSpeed, 4000);
             AnimatePointer(PointerSpeed, 4000);
-            AnimatePointer(NeedleTorque, 5);
-            AnimatePointer(PointerTorque, 5);
-            AnimatePointer(NeedleIBus, 25);
-            AnimatePointer(PointerIBus, 25);
+            AnimatePointer(NeedleTorque, 2.5);
+            AnimatePointer(PointerTorque, 2.5);
+            AnimatePointer(NeedleIBus, 40);
+            //AnimatePointer(PointerIBus, 40);
             AnimatePointer(NeedleVBus, 50);
-            AnimatePointer(PointerVBus, 50);
+            //AnimatePointer(PointerVBus, 50);
 
             await Task.Delay(500); // kurz stehen lassen
 
@@ -144,9 +146,9 @@ namespace MotorPanel
             AnimatePointer(NeedleTorque, 0);
             AnimatePointer(PointerTorque, 0);
             AnimatePointer(NeedleIBus, 0);
-            AnimatePointer(PointerIBus, 0);
+            //AnimatePointer(PointerIBus, 0);
             AnimatePointer(NeedleVBus, 0);
-            AnimatePointer(PointerVBus, 0);
+            //AnimatePointer(PointerVBus, 0);
 
             await Task.WhenAll(
                 AnimateLinearPointer(PointerPCBTemp, 0),
@@ -169,7 +171,6 @@ namespace MotorPanel
             DoubleAnimation anim = new DoubleAnimation();
             anim.From = pointer.Value;
             anim.To = toValue;
-            anim.FillBehavior = FillBehavior.Stop;
             anim.Duration = TimeSpan.FromMilliseconds(400);
             pointer.BeginAnimation(CircularPointer.ValueProperty, anim);
         }
@@ -252,6 +253,37 @@ namespace MotorPanel
             EventLogListBox.Items.Insert(0, logEntry);
             EventLogListBox.ScrollIntoView(EventLogListBox.Items[0]);
         }
+
+        private void TrimCollectionsIfNeeded()
+        {
+            // while any collection exceeds MaxPoints, remove the oldest and shift baseTime
+            while (idData.Count > MaxPoints || iqData.Count > MaxPoints || vdData.Count > MaxPoints || vqData.Count > MaxPoints)
+            {
+                // find smallest X among oldest entries (they are synchronized by time t)
+                double oldestX = double.MaxValue;
+                if (idData.Count > 0) oldestX = Math.Min(oldestX, idData[0].X);
+                if (iqData.Count > 0) oldestX = Math.Min(oldestX, iqData[0].X);
+                if (vdData.Count > 0) oldestX = Math.Min(oldestX, vdData[0].X);
+                if (vqData.Count > 0) oldestX = Math.Min(oldestX, vqData[0].X);
+
+                if (oldestX == double.MaxValue) break;
+
+                // remove oldest from each collection if present
+                if (idData.Count > 0 && idData[0].X == oldestX) idData.RemoveAt(0);
+                if (iqData.Count > 0 && iqData[0].X == oldestX) iqData.RemoveAt(0);
+                if (vdData.Count > 0 && vdData[0].X == oldestX) vdData.RemoveAt(0);
+                if (vqData.Count > 0 && vqData[0].X == oldestX) vqData.RemoveAt(0);
+
+                // shift remaining points' X to keep values small
+                foreach (var p in idData) p.X -= oldestX;
+                foreach (var p in iqData) p.X -= oldestX;
+                foreach (var p in vdData) p.X -= oldestX;
+                foreach (var p in vqData) p.X -= oldestX;
+
+                // increase baseTime by the removed offset so new t values stay continuous
+                baseTime += oldestX;
+            }
+        }
         // ----------------------------------------------------- receiving - event handler ---------------------------------------------------
         // reihenfolge receiving: speed, torque, IBus, VBus, PCBTemp, WindingTemp, id, iq, vd, vq, error, warning
         private void Serial1_DataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -272,7 +304,7 @@ namespace MotorPanel
                     // Use BeginInvoke to avoid blocking the serial thread
                     Dispatcher.BeginInvoke((Action)(() =>
                     {
-                        double t = stopwatch != null ? stopwatch.Elapsed.TotalSeconds : time;
+                        double t = stopwatch != null ? stopwatch.Elapsed.TotalSeconds - baseTime : time;
                         for (int i = 0; i < FloatCount; i++)
                         {
                             float value = BitConverter.ToSingle(buffer, i * 4);
@@ -292,21 +324,20 @@ namespace MotorPanel
                                     break;
 
                                 case 2:
-                                    PointerIBus.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    //PointerIBus.BeginAnimation(CircularPointer.ValueProperty, null);
                                     NeedleIBus.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    PointerIBus.Value = value;
+                                    //PointerIBus.Value = value;
                                     NeedleIBus.Value = value;
                                     break;
 
                                 case 3:
-                                    PointerVBus.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    //PointerVBus.BeginAnimation(CircularPointer.ValueProperty, null);
                                     NeedleVBus.BeginAnimation(CircularPointer.ValueProperty, null);
-                                    PointerVBus.Value = value;
+                                    //PointerVBus.Value = value;
                                     NeedleVBus.Value = value;
                                     break;
 
                                 case 4:
-                                    // PointerPCBTemp and BarPCBTemp are linear, assign directly
                                     PointerPCBTemp.Value = value;
                                     BarPCBTemp.Value = value;
                                     break;
@@ -318,26 +349,18 @@ namespace MotorPanel
 
                                 case 6:
                                     idData.Add(new ChartPoint { X = t, Y = value });
-                                    if (idData.Count > 300)
-                                        idData.RemoveAt(0);
                                     break;
 
                                 case 7:
                                     iqData.Add(new ChartPoint { X = t, Y = value });
-                                    if (iqData.Count > 300)
-                                        iqData.RemoveAt(0);
                                     break;
 
                                 case 8:
                                     vdData.Add(new ChartPoint { X = t, Y = value });
-                                    if (vdData.Count > 300)
-                                        vdData.RemoveAt(0);
                                     break;
 
                                 case 9:
                                     vqData.Add(new ChartPoint { X = t, Y = value });
-                                    if (vqData.Count > 300)
-                                        vqData.RemoveAt(0);
                                     break;
 
                                 case 10:
@@ -349,6 +372,10 @@ namespace MotorPanel
                                     break;
                             }
                         }
+
+                        // Trim collections to sliding window and adjust X by removing
+                        // the oldest X (baseTime) so values remain small.
+                        TrimCollectionsIfNeeded();
 
                         // Additions to the ObservableCollection will notify the chart. Just
                         // invalidate visuals to ensure redraw.
@@ -532,7 +559,7 @@ namespace MotorPanel
         {
             if(SwitchSensor.IsChecked == true) 
             {
-                LogEvent("sensoless mode activated");
+                LogEvent("sensorless mode activated");
                 SensOrSL = false;
             }
             else
@@ -556,7 +583,9 @@ namespace MotorPanel
             {
                 if (speed >= 0 && speed <= 4000)
                 {
-                    AnimatePointer(PointerSpeed, speed);
+                    // set reference pointer directly so it stays at the entered target
+                    PointerSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
+                    PointerSpeed.Value = speed;
                 }
                 else
                 {
@@ -579,7 +608,7 @@ namespace MotorPanel
 
             if (double.TryParse(txtbTargetIq.Text, out double iq))
             {
-                if (iq >= 0 && iq <= 5)
+                if (iq >= 0 && iq <= 2.5)
                 {
                     AnimatePointer(PointerTorque, iq);
                 }

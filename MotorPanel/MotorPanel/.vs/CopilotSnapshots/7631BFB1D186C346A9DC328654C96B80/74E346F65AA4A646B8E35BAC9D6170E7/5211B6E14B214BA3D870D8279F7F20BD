@@ -1,0 +1,592 @@
+﻿using Syncfusion.UI.Xaml.Charts;
+using Syncfusion.UI.Xaml.Gauges;
+using System.IO.Ports;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
+namespace MotorPanel
+{
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window
+    {
+        SerialPort Serial1;
+        const int baudRate = 115200;
+
+        const byte StartByte = 0xAA;
+        const int FloatCount = 12;
+        const int PacketSize = 1 + FloatCount * 4; // 49 Bytes
+
+        double TargedSpeed;
+        double TargedIq;
+        bool DisableOrEnable;
+        bool StopOrstart;
+        bool LeftOrRight;
+        bool BlockOrFOC;
+        bool SensOrSL;
+        bool SpeedOrTorque;         // bei bool-variablen: true = vordere und false = hintere option, z. B. true = speed-regelung, false = torque-regelung
+
+        ObservableCollection<ChartPoint> idData = new();
+        ObservableCollection<ChartPoint> iqData = new();
+        ObservableCollection<ChartPoint> vdData = new();
+        ObservableCollection<ChartPoint> vqData = new();
+        double time = 0;
+        Stopwatch stopwatch;
+        double baseTime = 0; // time offset to keep X values small
+        const int MaxPoints = 300;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+
+            // alle verfügbaren COM-Ports abrufen und in combobox füllen
+            string[] ports = SerialPort.GetPortNames();
+            ComboBoxComPorts.ItemsSource = ports;
+        }
+        public class ChartPoint
+        {
+            public double X { get; set; }
+            public double Y { get; set; }
+        }
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            BtnConnect.IsEnabled = true;
+            BtnDisconnect.IsEnabled = false;
+            txtbTargetIq.IsEnabled = false;     // weil in speed-Regelung gestartet wird
+
+            LogEvent("motor-panel opened");
+            await StartupSelfTest();
+
+            // start stopwatch to provide accurate X axis timing (seconds)
+            stopwatch = Stopwatch.StartNew();
+
+            // Listen mit chart verbinden, damit die Datenpunkte angezeigt werden können (z. B. Id, Iq, vd, vq)
+            IdSeries.ItemsSource = idData;
+            IdSeries.XBindingPath = "X";
+            IdSeries.YBindingPath = "Y";
+
+            IqSeries.ItemsSource = iqData;
+            IqSeries.XBindingPath = "X";
+            IqSeries.YBindingPath = "Y";
+
+            vdSeries.ItemsSource = vdData;
+            vdSeries.XBindingPath = "X";
+            vdSeries.YBindingPath = "Y";
+
+            vqSeries.ItemsSource = vqData;
+            vqSeries.XBindingPath = "X";
+            vqSeries.YBindingPath = "Y";
+        }
+        // -------------- startup animation: LEDs blinken, Zeiger auf max fahren, LinearPointer animieren, alles zurücksetzen ---------------
+        private async Task StartupSelfTest()
+        {
+            // 1LEDs blinken
+            LedError.Fill = Brushes.Red;
+            LedWarning.Fill = Brushes.Orange;
+            LedEnabled.Fill = Brushes.Green;
+            LedConnected.Fill = Brushes.Green;
+
+            Ellipse[] leds = { LedError, LedWarning, LedEnabled, LedConnected };
+            for (int i = 0; i < 3; i++) // 3 Blinkzyklen
+            {
+                foreach (var led in leds) led.Visibility = Visibility.Visible;
+                await Task.Delay(200);
+                foreach (var led in leds) led.Visibility = Visibility.Hidden;
+                await Task.Delay(200);
+            }
+            // alle wieder sichtbar (oder nur Enabled/Connected?)
+            LedError.Visibility = Visibility.Visible;
+            LedWarning.Visibility = Visibility.Visible;
+            LedEnabled.Visibility = Visibility.Visible;
+            LedConnected.Visibility = Visibility.Visible;
+
+            LedError.Fill = Brushes.WhiteSmoke;
+            LedWarning.Fill = Brushes.WhiteSmoke;
+            LedEnabled.Fill = Brushes.WhiteSmoke;
+            LedConnected.Fill = Brushes.WhiteSmoke;
+
+            // CircularPointer auf Max fahren
+            AnimatePointer(NeedleSpeed, 4000);
+            AnimatePointer(PointerSpeed, 4000);
+            AnimatePointer(NeedleTorque, 2.5);
+            AnimatePointer(PointerTorque, 2.5);
+            AnimatePointer(NeedleIBus, 35);
+            AnimatePointer(PointerIBus, 35);
+            AnimatePointer(NeedleVBus, 50);
+            AnimatePointer(PointerVBus, 50);
+
+            await Task.Delay(500); // kurz stehen lassen
+
+            // LinearPointer animieren
+            await Task.WhenAll(
+                AnimateLinearPointer(PointerPCBTemp, 80),
+                AnimateLinearPointer(BarPCBTemp, 80),
+                AnimateLinearPointer(PointerWindingTemp, 80),
+                AnimateLinearPointer(BarWindingTemp, 80)
+            );
+
+            await Task.Delay(500);
+
+            // Alles wieder auf 0
+            AnimatePointer(NeedleSpeed, 0);
+            AnimatePointer(PointerSpeed, 0);
+            AnimatePointer(NeedleTorque, 0);
+            AnimatePointer(PointerTorque, 0);
+            AnimatePointer(NeedleIBus, 0);
+            AnimatePointer(PointerIBus, 0);
+            AnimatePointer(NeedleVBus, 0);
+            AnimatePointer(PointerVBus, 0);
+
+            await Task.WhenAll(
+                AnimateLinearPointer(PointerPCBTemp, 0),
+                AnimateLinearPointer(BarPCBTemp, 0),
+                AnimateLinearPointer(PointerWindingTemp, 0),
+                AnimateLinearPointer(BarWindingTemp, 0)
+            );
+
+            // Test-Log
+            LogEvent("startup self-test done");
+        }
+        private async void MenuItemSelfTest_Click(object sender, RoutedEventArgs e)
+        {
+            LogEvent("self-test started");
+            await StartupSelfTest();
+            LogEvent("self-test finished");
+        }
+        private void AnimatePointer(CircularPointer pointer, double toValue)
+        {
+            DoubleAnimation anim = new DoubleAnimation();
+            anim.From = pointer.Value;
+            anim.To = toValue;
+            anim.Duration = TimeSpan.FromMilliseconds(400);
+            pointer.BeginAnimation(CircularPointer.ValueProperty, anim);
+        }
+
+        private async Task AnimateLinearPointer(LinearPointer pointer, double target, int steps = 20, int delayMs = 20)
+        {
+            double start = pointer.Value;
+            double delta = (target - start) / steps;
+
+            for (int i = 0; i < steps; i++)
+            {
+                pointer.Value += delta;
+                await Task.Delay(delayMs);
+            }
+        }
+
+        // -------------------------------------------------------- manage uart connection ---------------------------------------------------
+        private void BtnConnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (ComboBoxComPorts.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a COM-port!");
+            }
+            else
+            {
+                TryOpenSerialPort(ComboBoxComPorts.SelectedItem.ToString());
+            }
+        }
+        private void BtnDisconnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (Serial1 != null && Serial1.IsOpen)
+            {
+                // unsubscribe event handler before closing/disposing
+                Serial1.DataReceived -= Serial1_DataReceived;
+                Serial1.Close();
+                Serial1.Dispose();
+                Serial1 = null;
+                LedConnected.Fill = Brushes.WhiteSmoke;
+                LogEvent("serial port closed");
+                BtnConnect.IsEnabled = true;
+                BtnDisconnect.IsEnabled = false;
+            }
+        }
+        private void BtnRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            string[] ports = SerialPort.GetPortNames();
+            ComboBoxComPorts.ItemsSource = ports;
+        }
+        void TryOpenSerialPort(string portName)
+        {
+            try
+            {
+                Serial1 = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One);
+                Serial1.DataReceived += Serial1_DataReceived;
+                Serial1.Open(); // Port erfolgreich geöffnet
+                LogEvent("serial port opened");
+                LedConnected.Fill = Brushes.Green;
+                BtnConnect.IsEnabled = false;
+                BtnDisconnect.IsEnabled = true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                LedConnected.Fill = Brushes.WhiteSmoke;
+                MessageBox.Show($"Port {portName} is already in use!", "connection error", MessageBoxButton.OK, MessageBoxImage.Error);
+                LogEvent($"port {portName} is already in use");
+            }
+            catch (Exception ex)
+            {
+                LedConnected.Fill = Brushes.WhiteSmoke;
+                MessageBox.Show($"Error opening {portName}: {ex.Message}","connection error", MessageBoxButton.OK, MessageBoxImage.Error);
+                LogEvent($"error opening {portName}");
+            }
+        }
+        // ------------------------------------------------------- log event function --------------------------------------------------------
+        private void LogEvent(string message)
+        {
+            string timestamp = DateTime.Now.ToString("HH:mm:ss");
+            string logEntry = $"[{timestamp}] {message}";
+
+            EventLogListBox.Items.Insert(0, logEntry);
+            EventLogListBox.ScrollIntoView(EventLogListBox.Items[0]);
+        }
+        // ----------------------------------------------------- receiving - event handler ---------------------------------------------------
+        // reihenfolge receiving: speed, torque, IBus, VBus, PCBTemp, WindingTemp, id, iq, vd, vq, error, warning
+        private void Serial1_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            try
+            {
+                while (Serial1.BytesToRead >= PacketSize)
+                {
+                    // Prüfen ob erstes Byte Startbyte ist
+                    if (Serial1.ReadByte() != StartByte)
+                    {
+                        continue; // solange lesen bis 0xAA gefunden wird
+                    }
+
+                    byte[] buffer = new byte[FloatCount * 4];
+                    Serial1.Read(buffer, 0, buffer.Length);
+
+                    // Use BeginInvoke to avoid blocking the serial thread
+                    Dispatcher.BeginInvoke((Action)(() =>
+                    {
+                        double t = stopwatch != null ? stopwatch.Elapsed.TotalSeconds - baseTime : time;
+                        for (int i = 0; i < FloatCount; i++)
+                        {
+                            float value = BitConverter.ToSingle(buffer, i * 4);
+
+                            switch (i)
+                            {
+                                case 0:
+                                    // update measured speed (needle) only; keep pointer showing reference value
+                                    NeedleSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    NeedleSpeed.Value = value;
+                                    break;
+
+                                case 1:
+                                    // update measured torque (needle) only; keep pointer showing reference value
+                                    NeedleTorque.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    NeedleTorque.Value = value;
+                                    break;
+
+                                case 2:
+                                    PointerIBus.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    NeedleIBus.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    PointerIBus.Value = value;
+                                    NeedleIBus.Value = value;
+                                    break;
+
+                                case 3:
+                                    PointerVBus.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    NeedleVBus.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    PointerVBus.Value = value;
+                                    NeedleVBus.Value = value;
+                                    break;
+
+                                case 4:
+                                    PointerPCBTemp.Value = value;
+                                    BarPCBTemp.Value = value;
+                                    break;
+
+                                case 5:
+                                    PointerWindingTemp.Value = value;
+                                    BarWindingTemp.Value = value;
+                                    break;
+
+                                case 6:
+                                    idData.Add(new ChartPoint { X = t, Y = value });
+                                    break;
+
+                                case 7:
+                                    iqData.Add(new ChartPoint { X = t, Y = value });
+                                    break;
+
+                                case 8:
+                                    vdData.Add(new ChartPoint { X = t, Y = value });
+                                    break;
+
+                                case 9:
+                                    vqData.Add(new ChartPoint { X = t, Y = value });
+                                    break;
+
+                                case 10:
+                                    LedError.Fill = value == 1f ? Brushes.Red : Brushes.WhiteSmoke;
+                                    break;
+
+                                case 11:
+                                    LedWarning.Fill = value == 1f ? Brushes.Orange : Brushes.WhiteSmoke;
+                                    break;
+                            }
+                        }
+
+                        // Additions to the ObservableCollection will notify the chart. Just
+                        // invalidate visuals to ensure redraw.
+                        CurrentChart.InvalidateVisual();
+                        VoltageChart.InvalidateVisual();
+                        if (stopwatch == null)
+                            time += 0.1;
+                    }));
+                }
+            }
+            catch (Exception ex)
+            {
+                // Don't let serial exceptions crash the thread; log to UI if possible
+                try
+                {
+                    Dispatcher.BeginInvoke((Action)(() => LogEvent($"serial receive error: {ex.Message}")));
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+        }
+        // ----------------------------------------------------- sending packets -------------------------------------------------------------
+        // reihenfolge sending: TargetSpeed, TargetIq, ControlMode, EnableMotor, StartStop, Direction, FOC/Block, Sensored/Sensorless
+        private void SendControlPacket()
+        {
+            if (Serial1 == null || !Serial1.IsOpen)
+                return;
+
+            float targetSpeed = 0f;
+            float targetIq = 0f;
+
+            float.TryParse(txtbTargetSpeed.Text, out targetSpeed);
+            float.TryParse(txtbTargetIq.Text, out targetIq);
+
+            // bool → float
+            float controlMode = SpeedOrTorque ? 1f : 0f;
+            float enableMotor = SwitchEnableMotor.IsChecked == true ? 1f : 0f;
+            float startStop = SwitchStartStop.IsChecked == true ? 1f : 0f;
+            float direction = SwitchDirection.IsChecked == true ? 1f : 0f;
+            float focBlock = SwitchBlockFoc.IsChecked == true ? 1f : 0f;
+            float sensorMode = SwitchSensor.IsChecked == true ? 1f : 0f;
+
+            float[] values =
+            {
+                targetSpeed,
+                targetIq,
+                controlMode,
+                enableMotor,
+                startStop,
+                direction,
+                focBlock,
+                sensorMode
+            };
+
+            const byte StartByte = 0xAA;
+            byte[] packet = new byte[1 + values.Length * 4]; // 1 Byte Startbyte + 4 Byte pro float
+            packet[0] = StartByte;
+
+            int index = 1; // da ja Start nach Startbyte
+
+            foreach (float val in values)
+            {
+                byte[] bytes = BitConverter.GetBytes(val); // Little Endian float
+                Array.Copy(bytes, 0, packet, index, 4);
+                index += 4;
+            }
+
+            try
+            {
+                Serial1.Write(packet, 0, packet.Length);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error sending packet to µC: {ex.Message}", "serial error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // -------------------------------------------------------- buttons ------------------------------------------------------------------
+        private void BtnApplyTarget_Click(object sender, RoutedEventArgs e)
+        {
+            TargedIq = double.TryParse(txtbTargetIq.Text, out double iq) ? iq : 0;
+            TargedSpeed = double.TryParse(txtbTargetSpeed.Text, out double speed) ? speed : 0;
+
+            SendControlPacket();
+        }
+
+        private void SwitchControlMode_Click(object sender, RoutedEventArgs e)
+        {
+            if(SwitchControlMode.IsChecked == true) // Iq-Regelung
+            {
+                LogEvent("switched to torque control (just in FOC available)");
+                SwitchBlockFoc.IsChecked = true;   // hier keine Blockkommutierung möglich
+                SwitchBlockFoc.IsEnabled = false;
+                txtbTargetSpeed.IsEnabled = false;
+                txtbTargetIq.IsEnabled = true;
+
+                SpeedOrTorque = false;
+            }
+            else     // speed-Regelung
+            {
+                LogEvent("switched to speed control (FOC keeps activated)");
+                SwitchBlockFoc.IsEnabled = true;
+                txtbTargetSpeed.IsEnabled = true;
+                txtbTargetIq.IsEnabled = false;
+
+                SpeedOrTorque = true;
+            }
+
+            SendControlPacket();
+        }
+
+        private void SwitchEnableMotor_Click(object sender, RoutedEventArgs e)
+        {
+            if(SwitchEnableMotor.IsChecked == true)
+            {
+                LogEvent("motor enabled");
+                DisableOrEnable = false;
+                LedEnabled.Fill = Brushes.Green;
+            }
+            else
+            {
+                LogEvent("motor disabled");
+                DisableOrEnable = true;
+                LedEnabled.Fill = Brushes.WhiteSmoke;
+            }
+
+            SendControlPacket();
+        }
+
+        private void SwitchStartStop_Click(object sender, RoutedEventArgs e)
+        {
+            if (SwitchStartStop.IsChecked == true)            
+            {
+                LogEvent("motor started");
+                StopOrstart = false;
+            }
+            else
+            {
+                LogEvent("motor stopped");
+                StopOrstart = true;
+            }
+
+            SendControlPacket();
+        }
+
+        private void SwitchDirection_Click(object sender, RoutedEventArgs e)
+        {
+            if (SwitchDirection.IsChecked == true)
+            {
+                LogEvent("direction: right");
+                LeftOrRight = false;
+            }
+            else
+            {
+                LogEvent("direction: left");
+                LeftOrRight = true;
+            }
+
+            SendControlPacket();
+        }
+
+        private void SwitchBlockFoc_Click(object sender, RoutedEventArgs e)
+        {
+            if (SwitchBlockFoc.IsChecked == true)
+            {
+                LogEvent("FOC activated");
+                BlockOrFOC = false;
+            }
+            else
+            {
+                LogEvent("block-commutation activated");
+                BlockOrFOC = true;
+            }
+
+            SendControlPacket();
+        }
+
+        private void SwitchSensor_Click(object sender, RoutedEventArgs e)
+        {
+            if(SwitchSensor.IsChecked == true) 
+            {
+                LogEvent("sensorless mode activated");
+                SensOrSL = false;
+            }
+            else
+            {
+                LogEvent("sensored mode activated");
+                SensOrSL = true;
+            }
+
+            SendControlPacket();
+        }
+
+        private void txtbTargetSpeed_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtbTargetSpeed.Text))
+            {
+                AnimatePointer(PointerSpeed, 0);
+                return;
+            }
+
+            if (double.TryParse(txtbTargetSpeed.Text, out double speed))
+            {
+                if (speed >= 0 && speed <= 4000)
+                {
+                    // set reference pointer directly so it stays at the entered target
+                    PointerSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
+                    PointerSpeed.Value = speed;
+                }
+                else
+                {
+                    MessageBox.Show("The value must be between 0 and 4000.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Please enter a valid number.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void txtbTargetIq_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtbTargetIq.Text))
+            {
+                AnimatePointer(PointerTorque, 0);
+                return;
+            }
+
+            if (double.TryParse(txtbTargetIq.Text, out double iq))
+            {
+                if (iq >= 0 && iq <= 2.5)
+                {
+                    AnimatePointer(PointerTorque, iq);
+                }
+                else
+                {
+                    MessageBox.Show("The value must be between 0 and 5.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Please enter a valid number.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+    
+    }
+}
