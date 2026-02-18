@@ -7,7 +7,6 @@ using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Globalization;
 
 namespace MotorPanel
 {
@@ -38,33 +37,6 @@ namespace MotorPanel
             // alle verfügbaren COM-Ports abrufen und in combobox füllen
             string[] ports = SerialPort.GetPortNames();
             ComboBoxComPorts.ItemsSource = ports;
-        }
-        // Try to parse user-entered numbers accepting both ',' and '.' as decimal separators.
-        private bool TryParseUserDouble(string text, out double value)
-        {
-            value = 0.0;
-            if (string.IsNullOrWhiteSpace(text))
-                return false;
-
-            // 1) Try with current culture (preferred)
-            if (double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value))
-                return true;
-
-            // 2) Try invariant culture
-            if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
-                return true;
-
-            // 3) Replace comma with dot and try invariant (accept German-style input on systems expecting dot)
-            string alt = text.Replace(',', '.');
-            if (double.TryParse(alt, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
-                return true;
-
-            // 4) Replace dot with comma and try current culture (accept dot on systems expecting comma)
-            alt = text.Replace('.', ',');
-            if (double.TryParse(alt, NumberStyles.Float, CultureInfo.CurrentCulture, out value))
-                return true;
-
-            return false;
         }
         public class ChartPoint
         {
@@ -420,8 +392,8 @@ namespace MotorPanel
             // parse and scale numeric entries (factor 1000)
             double parsedSpeed = 0.0;
             double parsedIq = 0.0;
-            TryParseUserDouble(txtbTargetSpeed.Text, out parsedSpeed);
-            TryParseUserDouble(txtbTargetIq.Text, out parsedIq);
+            double.TryParse(txtbTargetSpeed.Text, out parsedSpeed);
+            double.TryParse(txtbTargetIq.Text, out parsedIq);
 
             // scale and clamp to unsigned 32-bit range
             double scaledSpeed = Math.Round(parsedSpeed * 1000.0);  // mal 1000 da in uint gesendet wird
@@ -597,7 +569,7 @@ namespace MotorPanel
                 return;
             }
 
-            if (TryParseUserDouble(txtbTargetSpeed.Text, out double speed))
+            if (double.TryParse(txtbTargetSpeed.Text, out double speed))
             {
                 if (speed >= 0 && speed <= 4000)
                 {
@@ -624,7 +596,7 @@ namespace MotorPanel
                 return;
             }
 
-            if (TryParseUserDouble(txtbTargetIq.Text, out double iq))
+            if (double.TryParse(txtbTargetIq.Text, out double iq))
             {
                 if (iq >= 0 && iq <= 2.5)
                 {

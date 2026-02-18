@@ -47,21 +47,21 @@ namespace MotorPanel
                 return false;
 
             // 1) Try with current culture (preferred)
-            if (double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value))
+            if (double.TryParse(text, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.CurrentCulture, out value))
                 return true;
 
             // 2) Try invariant culture
-            if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            if (double.TryParse(text, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out value))
                 return true;
 
             // 3) Replace comma with dot and try invariant (accept German-style input on systems expecting dot)
             string alt = text.Replace(',', '.');
-            if (double.TryParse(alt, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            if (double.TryParse(alt, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out value))
                 return true;
 
             // 4) Replace dot with comma and try current culture (accept dot on systems expecting comma)
             alt = text.Replace('.', ',');
-            if (double.TryParse(alt, NumberStyles.Float, CultureInfo.CurrentCulture, out value))
+            if (double.TryParse(alt, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.CurrentCulture, out value))
                 return true;
 
             return false;
