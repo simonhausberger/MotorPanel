@@ -1,15 +1,26 @@
-﻿using Syncfusion.UI.Xaml.Gauges;
+﻿using Syncfusion.UI.Xaml.Charts;
+using Syncfusion.UI.Xaml.Gauges;
 using System.IO.Ports;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MotorPanel
 {
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
     public partial class MainWindow : Window
     {
         SerialPort Serial1;
@@ -19,7 +30,14 @@ namespace MotorPanel
         const int FloatCount = 12;
         const int PacketSize = 1 + FloatCount * 4; // 49 Bytes
 
-        // target values are read directly from the UI when sending packets
+        double TargedSpeed;
+        double TargedIq;
+        bool DisableOrEnable;
+        bool StopOrstart;
+        bool LeftOrRight;
+        bool BlockOrFOC;
+        bool SensOrSL;
+        bool SpeedOrTorque;         // bei bool-variablen: true = vordere und false = hintere option, z. B. true = speed-regelung, false = torque-regelung
 
         ObservableCollection<ChartPoint> idData = new();
         ObservableCollection<ChartPoint> iqData = new();
@@ -75,7 +93,7 @@ namespace MotorPanel
         // -------------- startup animation: LEDs blinken, Zeiger auf max fahren, LinearPointer animieren, alles zurücksetzen ---------------
         private async Task StartupSelfTest()
         {
-            // LEDs blinken
+            // 1LEDs blinken
             LedError.Fill = Brushes.Red;
             LedWarning.Fill = Brushes.Orange;
             LedEnabled.Fill = Brushes.Green;
@@ -169,7 +187,7 @@ namespace MotorPanel
             }
         }
 
-        // -------------------------------------------------------- manage uart-connection ---------------------------------------------------
+        // -------------------------------------------------------- manage uart connection ---------------------------------------------------
         private void BtnConnect_Click(object sender, RoutedEventArgs e)
         {
             if (ComboBoxComPorts.SelectedItem == null)
@@ -226,7 +244,7 @@ namespace MotorPanel
                 LogEvent($"error opening {portName}");
             }
         }
-        // ------------------------------------------------------- log-event function --------------------------------------------------------
+        // ------------------------------------------------------- log event function --------------------------------------------------------
         private void LogEvent(string message)
         {
             string timestamp = DateTime.Now.ToString("HH:mm:ss");
@@ -394,9 +412,8 @@ namespace MotorPanel
             float.TryParse(txtbTargetSpeed.Text, out targetSpeed);
             float.TryParse(txtbTargetIq.Text, out targetIq);
 
-            // bool → float (read directly from control)
-            // When SwitchControlMode is checked it means torque control (Iq), otherwise speed control
-            float controlMode = SwitchControlMode.IsChecked == true ? 0f : 1f;
+            // bool → float
+            float controlMode = SpeedOrTorque ? 1f : 0f;
             float enableMotor = SwitchEnableMotor.IsChecked == true ? 1f : 0f;
             float startStop = SwitchStartStop.IsChecked == true ? 1f : 0f;
             float direction = SwitchDirection.IsChecked == true ? 1f : 0f;
@@ -415,43 +432,35 @@ namespace MotorPanel
                 sensorMode
             };
 
-            // build packet: 1 start byte + 4 bytes per float
+            const byte StartByte = 0xAA;
             byte[] packet = new byte[1 + values.Length * 4]; // 1 Byte Startbyte + 4 Byte pro float
-            packet[0] = StartByte; // use class-level StartByte so sender/receiver stay consistent
+            packet[0] = StartByte;
 
             int index = 1; // da ja Start nach Startbyte
 
             foreach (float val in values)
             {
-                byte[] bytes = BitConverter.GetBytes(val);
-                // ensure little-endian byte order on platforms that might be big-endian
-                if (!BitConverter.IsLittleEndian)
-                    Array.Reverse(bytes);
-
+                byte[] bytes = BitConverter.GetBytes(val); // Little Endian float
                 Array.Copy(bytes, 0, packet, index, 4);
                 index += 4;
             }
 
             try
             {
-                lock (Serial1)
-                {
-                    Serial1.Write(packet, 0, packet.Length);
-                }
-
-                LogEvent($"control packet sent ({packet.Length} bytes)");
+                Serial1.Write(packet, 0, packet.Length);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error sending packet to µC: {ex.Message}", "serial error", MessageBoxButton.OK, MessageBoxImage.Error);
-                LogEvent($"control packet send error: {ex.Message}");
             }
         }
 
         // -------------------------------------------------------- buttons ------------------------------------------------------------------
         private void BtnApplyTarget_Click(object sender, RoutedEventArgs e)
         {
-            // values are read directly from the UI inside SendControlPacket
+            TargedIq = double.TryParse(txtbTargetIq.Text, out double iq) ? iq : 0;
+            TargedSpeed = double.TryParse(txtbTargetSpeed.Text, out double speed) ? speed : 0;
+
             SendControlPacket();
         }
 
@@ -465,7 +474,7 @@ namespace MotorPanel
                 txtbTargetSpeed.IsEnabled = false;
                 txtbTargetIq.IsEnabled = true;
 
-                
+                SpeedOrTorque = false;
             }
             else     // speed-Regelung
             {
@@ -474,7 +483,7 @@ namespace MotorPanel
                 txtbTargetSpeed.IsEnabled = true;
                 txtbTargetIq.IsEnabled = false;
 
-                
+                SpeedOrTorque = true;
             }
 
             SendControlPacket();
@@ -485,11 +494,13 @@ namespace MotorPanel
             if(SwitchEnableMotor.IsChecked == true)
             {
                 LogEvent("motor enabled");
+                DisableOrEnable = false;
                 LedEnabled.Fill = Brushes.Green;
             }
             else
             {
                 LogEvent("motor disabled");
+                DisableOrEnable = true;
                 LedEnabled.Fill = Brushes.WhiteSmoke;
             }
 
@@ -501,10 +512,12 @@ namespace MotorPanel
             if (SwitchStartStop.IsChecked == true)            
             {
                 LogEvent("motor started");
+                StopOrstart = false;
             }
             else
             {
                 LogEvent("motor stopped");
+                StopOrstart = true;
             }
 
             SendControlPacket();
@@ -515,10 +528,12 @@ namespace MotorPanel
             if (SwitchDirection.IsChecked == true)
             {
                 LogEvent("direction: right");
+                LeftOrRight = false;
             }
             else
             {
                 LogEvent("direction: left");
+                LeftOrRight = true;
             }
 
             SendControlPacket();
@@ -529,10 +544,12 @@ namespace MotorPanel
             if (SwitchBlockFoc.IsChecked == true)
             {
                 LogEvent("FOC activated");
+                BlockOrFOC = false;
             }
             else
             {
                 LogEvent("block-commutation activated");
+                BlockOrFOC = true;
             }
 
             SendControlPacket();
@@ -543,10 +560,12 @@ namespace MotorPanel
             if(SwitchSensor.IsChecked == true) 
             {
                 LogEvent("sensorless mode activated");
+                SensOrSL = false;
             }
             else
             {
                 LogEvent("sensored mode activated");
+                SensOrSL = true;
             }
 
             SendControlPacket();
@@ -603,15 +622,6 @@ namespace MotorPanel
                 MessageBox.Show("Please enter a valid number.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
-
-        private void info_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("info text", "info", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private void help_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("help text", "help", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
+    
     }
 }

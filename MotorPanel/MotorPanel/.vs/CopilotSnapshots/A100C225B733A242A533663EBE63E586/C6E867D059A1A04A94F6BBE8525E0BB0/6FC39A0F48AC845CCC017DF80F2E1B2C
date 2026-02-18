@@ -75,7 +75,7 @@ namespace MotorPanel
         // -------------- startup animation: LEDs blinken, Zeiger auf max fahren, LinearPointer animieren, alles zurücksetzen ---------------
         private async Task StartupSelfTest()
         {
-            // LEDs blinken
+            // 1LEDs blinken
             LedError.Fill = Brushes.Red;
             LedWarning.Fill = Brushes.Orange;
             LedEnabled.Fill = Brushes.Green;
@@ -169,7 +169,7 @@ namespace MotorPanel
             }
         }
 
-        // -------------------------------------------------------- manage uart-connection ---------------------------------------------------
+        // -------------------------------------------------------- manage uart connection ---------------------------------------------------
         private void BtnConnect_Click(object sender, RoutedEventArgs e)
         {
             if (ComboBoxComPorts.SelectedItem == null)
@@ -226,7 +226,7 @@ namespace MotorPanel
                 LogEvent($"error opening {portName}");
             }
         }
-        // ------------------------------------------------------- log-event function --------------------------------------------------------
+        // ------------------------------------------------------- log event function --------------------------------------------------------
         private void LogEvent(string message)
         {
             string timestamp = DateTime.Now.ToString("HH:mm:ss");
@@ -465,7 +465,7 @@ namespace MotorPanel
                 txtbTargetSpeed.IsEnabled = false;
                 txtbTargetIq.IsEnabled = true;
 
-                
+                SpeedOrTorque = false;
             }
             else     // speed-Regelung
             {
@@ -474,7 +474,7 @@ namespace MotorPanel
                 txtbTargetSpeed.IsEnabled = true;
                 txtbTargetIq.IsEnabled = false;
 
-                
+                SpeedOrTorque = true;
             }
 
             SendControlPacket();
@@ -606,12 +606,12 @@ namespace MotorPanel
 
         private void info_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("info text", "info", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("info...", "info", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void help_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("help text", "help", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("help...", "help", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }

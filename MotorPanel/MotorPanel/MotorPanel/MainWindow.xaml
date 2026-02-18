@@ -29,10 +29,10 @@
                 <MenuItem Header="start self-test" Click="MenuItemSelfTest_Click" />
             </MenuItem>
             
-            <MenuItem Header="info">
+            <MenuItem Header="info" Click="info_Click">
             </MenuItem>
             
-            <MenuItem Header="help">
+            <MenuItem Header="help" Click="help_Click">
             </MenuItem>
         </Menu>
         
