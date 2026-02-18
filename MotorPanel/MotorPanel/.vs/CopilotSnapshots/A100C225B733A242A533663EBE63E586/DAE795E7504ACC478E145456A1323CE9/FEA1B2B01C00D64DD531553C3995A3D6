@@ -383,41 +383,30 @@ namespace MotorPanel
         }
         // ----------------------------------------------------- sending packets -------------------------------------------------------------
         // reihenfolge sending: TargetSpeed, TargetIq, ControlMode, EnableMotor, StartStop, Direction, FOC/Block, Sensored/Sensorless
-        // now sending unsigned 32-bit integers (4 bytes each). Numeric values scaled by 1000. Booleans: 0 = false, 1 = true.
         private void SendControlPacket()
         {
             if (Serial1 == null || !Serial1.IsOpen)
                 return;
 
-            // parse and scale numeric entries (factor 1000)
-            double parsedSpeed = 0.0;
-            double parsedIq = 0.0;
-            double.TryParse(txtbTargetSpeed.Text, out parsedSpeed);
-            double.TryParse(txtbTargetIq.Text, out parsedIq);
+            float targetSpeed = 0f;
+            float targetIq = 0f;
 
-            // scale and clamp to unsigned 32-bit range
-            double scaledSpeed = Math.Round(parsedSpeed * 1000.0);
-            if (scaledSpeed < 0) scaledSpeed = 0;
-            if (scaledSpeed > uint.MaxValue) scaledSpeed = uint.MaxValue;
-            uint targetSpeedInt = (uint)scaledSpeed;
+            float.TryParse(txtbTargetSpeed.Text, out targetSpeed);
+            float.TryParse(txtbTargetIq.Text, out targetIq);
 
-            double scaledIq = Math.Round(parsedIq * 1000.0);
-            if (scaledIq < 0) scaledIq = 0;
-            if (scaledIq > uint.MaxValue) scaledIq = uint.MaxValue;
-            uint targetIqInt = (uint)scaledIq;
+            // bool → float (read directly from control)
+            // When SwitchControlMode is checked it means torque control (Iq), otherwise speed control
+            float controlMode = SwitchControlMode.IsChecked == true ? 0f : 1f;
+            float enableMotor = SwitchEnableMotor.IsChecked == true ? 1f : 0f;
+            float startStop = SwitchStartStop.IsChecked == true ? 1f : 0f;
+            float direction = SwitchDirection.IsChecked == true ? 1f : 0f;
+            float focBlock = SwitchBlockFoc.IsChecked == true ? 1f : 0f;
+            float sensorMode = SwitchSensor.IsChecked == true ? 1f : 0f;
 
-            // control flags as unsigned ints: keep previous semantic (checked = torque -> 0, speed -> 1)
-            uint controlMode = SwitchControlMode.IsChecked == true ? 0u : 1u;
-            uint enableMotor = SwitchEnableMotor.IsChecked == true ? 1u : 0u;
-            uint startStop = SwitchStartStop.IsChecked == true ? 1u : 0u;
-            uint direction = SwitchDirection.IsChecked == true ? 1u : 0u;
-            uint focBlock = SwitchBlockFoc.IsChecked == true ? 1u : 0u;
-            uint sensorMode = SwitchSensor.IsChecked == true ? 1u : 0u;
-
-            uint[] values = new uint[]
+            float[] values =
             {
-                targetSpeedInt,
-                targetIqInt,
+                targetSpeed,
+                targetIq,
                 controlMode,
                 enableMotor,
                 startStop,
@@ -426,14 +415,16 @@ namespace MotorPanel
                 sensorMode
             };
 
-            // build packet: 1 start byte + 4 bytes per uint
-            byte[] packet = new byte[1 + values.Length * 4];
-            packet[0] = StartByte;
+            // build packet: 1 start byte + 4 bytes per float
+            byte[] packet = new byte[1 + values.Length * 4]; // 1 Byte Startbyte + 4 Byte pro float
+            packet[0] = StartByte; // use class-level StartByte so sender/receiver stay consistent
 
-            int index = 1;
-            foreach (uint val in values)
+            int index = 1; // da ja Start nach Startbyte
+
+            foreach (float val in values)
             {
                 byte[] bytes = BitConverter.GetBytes(val);
+                // ensure little-endian byte order on platforms that might be big-endian
                 if (!BitConverter.IsLittleEndian)
                     Array.Reverse(bytes);
 
