@@ -220,13 +220,6 @@ namespace MotorPanel
                 Serial1.Close();
                 Serial1.Dispose();
                 Serial1 = null;
-                hasReceivedFirstPacket = false;
-                // clear chart data and baseTime on disconnect to reset X axis
-                idData.Clear();
-                iqData.Clear();
-                vdData.Clear();
-                vqData.Clear();
-                baseTime = 0;
                 LedConnected.Fill = Brushes.WhiteSmoke;
                 LogEvent("serial port closed");
                 BtnConnect.IsEnabled = true;
@@ -325,14 +318,7 @@ namespace MotorPanel
                     // Use BeginInvoke to avoid blocking the serial thread
                     Dispatcher.BeginInvoke((Action)(() =>
                     {
-                        double elapsed = stopwatch != null ? stopwatch.Elapsed.TotalSeconds : time;
-                        if (!hasReceivedFirstPacket)
-                        {
-                            // set baseTime so first sample X becomes 0
-                            baseTime = elapsed;
-                            hasReceivedFirstPacket = true;
-                        }
-                        double t = elapsed - baseTime;
+                        double t = stopwatch != null ? stopwatch.Elapsed.TotalSeconds - baseTime : time;
 
                         // parse incoming integer-based packet
                         // offsets in buffer (little-endian expected):

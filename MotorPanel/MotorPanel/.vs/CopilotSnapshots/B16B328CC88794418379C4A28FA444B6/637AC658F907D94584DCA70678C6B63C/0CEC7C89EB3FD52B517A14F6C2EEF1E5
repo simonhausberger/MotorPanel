@@ -17,9 +17,8 @@ namespace MotorPanel
         const int baudRate = 115200;
 
         const byte StartByte = 0xAA;
-        // new incoming layout: 1x uint32 + 9x uint16 + 2x uint8 = 24 bytes payload
-        const int IncomingPayloadSize = 4 + 9 * 2 + 2; // 24
-        const int PacketSize = 1 + IncomingPayloadSize; // start byte + payload = 25 bytes
+        const int FloatCount = 12;
+        const int PacketSize = 1 + FloatCount * 4; // 49 Bytes
 
         // target values are read directly from the UI when sending packets
 
@@ -30,7 +29,6 @@ namespace MotorPanel
         double time = 0;
         Stopwatch stopwatch;
         double baseTime = 0; // time offset to keep X values small
-        bool hasReceivedFirstPacket = false;
         const int MaxPoints = 300;
 
         public MainWindow()
@@ -220,13 +218,6 @@ namespace MotorPanel
                 Serial1.Close();
                 Serial1.Dispose();
                 Serial1 = null;
-                hasReceivedFirstPacket = false;
-                // clear chart data and baseTime on disconnect to reset X axis
-                idData.Clear();
-                iqData.Clear();
-                vdData.Clear();
-                vqData.Clear();
-                baseTime = 0;
                 LedConnected.Fill = Brushes.WhiteSmoke;
                 LogEvent("serial port closed");
                 BtnConnect.IsEnabled = true;
@@ -245,8 +236,6 @@ namespace MotorPanel
                 Serial1 = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One);
                 Serial1.DataReceived += Serial1_DataReceived;
                 Serial1.Open(); // Port erfolgreich geöffnet
-                // Reset first-packet flag so X axis will be zeroed at first incoming sample
-                hasReceivedFirstPacket = false;
                 LogEvent("serial port opened");
                 LedConnected.Fill = Brushes.Green;
                 BtnConnect.IsEnabled = false;
@@ -319,98 +308,80 @@ namespace MotorPanel
                         continue; // solange lesen bis 0xAA gefunden wird
                     }
 
-                    byte[] buffer = new byte[IncomingPayloadSize];
+                    byte[] buffer = new byte[FloatCount * 4];
                     Serial1.Read(buffer, 0, buffer.Length);
 
                     // Use BeginInvoke to avoid blocking the serial thread
                     Dispatcher.BeginInvoke((Action)(() =>
                     {
-                        double elapsed = stopwatch != null ? stopwatch.Elapsed.TotalSeconds : time;
-                        if (!hasReceivedFirstPacket)
+                        double t = stopwatch != null ? stopwatch.Elapsed.TotalSeconds - baseTime : time;
+                        for (int i = 0; i < FloatCount; i++)
                         {
-                            // set baseTime so first sample X becomes 0
-                            baseTime = elapsed;
-                            hasReceivedFirstPacket = true;
+                            float value = BitConverter.ToSingle(buffer, i * 4);
+
+                            switch (i)
+                            {
+                                case 0:
+                                    // update measured speed (needle) only; keep pointer showing reference value
+                                    NeedleSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    NeedleSpeed.Value = value;
+                                    break;
+
+                                case 1:
+                                    // update measured torque (needle) only; keep pointer showing reference value
+                                    NeedleTorque.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    NeedleTorque.Value = value;
+                                    break;
+
+                                case 2:
+                                    //PointerIBus.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    NeedleIBus.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    //PointerIBus.Value = value;
+                                    NeedleIBus.Value = value;
+                                    break;
+
+                                case 3:
+                                    //PointerVBus.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    NeedleVBus.BeginAnimation(CircularPointer.ValueProperty, null);
+                                    //PointerVBus.Value = value;
+                                    NeedleVBus.Value = value;
+                                    break;
+
+                                case 4:
+                                    PointerPCBTemp.Value = value;
+                                    BarPCBTemp.Value = value;
+                                    break;
+
+                                case 5:
+                                    PointerWindingTemp.Value = value;
+                                    BarWindingTemp.Value = value;
+                                    break;
+
+                                case 6:
+                                    idData.Add(new ChartPoint { X = t, Y = value });
+                                    break;
+
+                                case 7:
+                                    iqData.Add(new ChartPoint { X = t, Y = value });
+                                    break;
+
+                                case 8:
+                                    vdData.Add(new ChartPoint { X = t, Y = value });
+                                    break;
+
+                                case 9:
+                                    vqData.Add(new ChartPoint { X = t, Y = value });
+                                    break;
+
+                                case 10:
+                                    LedError.Fill = value == 1f ? Brushes.Red : Brushes.WhiteSmoke;
+                                    break;
+
+                                case 11:
+                                    LedWarning.Fill = value == 1f ? Brushes.Orange : Brushes.WhiteSmoke;
+                                    break;
+                            }
                         }
-                        double t = elapsed - baseTime;
-
-                        // parse incoming integer-based packet
-                        // offsets in buffer (little-endian expected):
-                        // 0-3: uint32 speed (scaled *1000)
-                        // 4-5: uint16 torque (scaled *1000)
-                        // 6-7: uint16 IBus (scaled *1000)
-                        // 8-9: uint16 VBus (scaled *1000)
-                        // 10-11: uint16 PCBTemp (scaled *100)
-                        // 12-13: uint16 WindingTemp (scaled *100)
-                        // 14-15: uint16 id (scaled *1000)
-                        // 16-17: uint16 iq (scaled *1000)
-                        // 18-19: uint16 vd (scaled *1000)
-                        // 20-21: uint16 vq (scaled *1000)
-                        // 22: error (uint8)
-                        // 23: warning (uint8)
-
-                        // Ensure endianness
-                        bool isLittle = BitConverter.IsLittleEndian;
-
-                        uint rawSpeed = BitConverter.ToUInt32(buffer, 0);
-                        double speed = rawSpeed / 1000.0;
-
-                        ushort rawTorque = BitConverter.ToUInt16(buffer, 4);
-                        double torque = rawTorque / 1000.0;
-
-                        ushort rawIBus = BitConverter.ToUInt16(buffer, 6);
-                        double iBus = rawIBus / 1000.0;
-
-                        ushort rawVBus = BitConverter.ToUInt16(buffer, 8);
-                        double vBus = rawVBus / 1000.0;
-
-                        ushort rawPCBTemp = BitConverter.ToUInt16(buffer, 10);
-                        double pcbTemp = rawPCBTemp / 100.0;
-
-                        ushort rawWindingTemp = BitConverter.ToUInt16(buffer, 12);
-                        double windingTemp = rawWindingTemp / 100.0;
-
-                        ushort rawId = BitConverter.ToUInt16(buffer, 14);
-                        double id = rawId / 1000.0;
-
-                        ushort rawIq = BitConverter.ToUInt16(buffer, 16);
-                        double iq = rawIq / 1000.0;
-
-                        ushort rawVd = BitConverter.ToUInt16(buffer, 18);
-                        double vd = rawVd / 1000.0;
-
-                        ushort rawVq = BitConverter.ToUInt16(buffer, 20);
-                        double vq = rawVq / 1000.0;
-
-                        byte err = buffer[22];
-                        byte warn = buffer[23];
-
-                        // update UI elements
-                        NeedleSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
-                        NeedleSpeed.Value = speed;
-
-                        NeedleTorque.BeginAnimation(CircularPointer.ValueProperty, null);
-                        NeedleTorque.Value = torque;
-
-                        NeedleIBus.BeginAnimation(CircularPointer.ValueProperty, null);
-                        NeedleIBus.Value = iBus;
-
-                        NeedleVBus.BeginAnimation(CircularPointer.ValueProperty, null);
-                        NeedleVBus.Value = vBus;
-
-                        PointerPCBTemp.Value = pcbTemp;
-                        BarPCBTemp.Value = pcbTemp;
-
-                        PointerWindingTemp.Value = windingTemp;
-                        BarWindingTemp.Value = windingTemp;
-
-                        idData.Add(new ChartPoint { X = t, Y = id });
-                        iqData.Add(new ChartPoint { X = t, Y = iq });
-                        vdData.Add(new ChartPoint { X = t, Y = vd });
-                        vqData.Add(new ChartPoint { X = t, Y = vq });
-
-                        LedError.Fill = err == 1 ? Brushes.Red : Brushes.WhiteSmoke;
-                        LedWarning.Fill = warn == 1 ? Brushes.Orange : Brushes.WhiteSmoke;
 
                         // Trim collections to sliding window and adjust X by removing
                         // the oldest X (baseTime) so values remain small.
@@ -471,44 +442,32 @@ namespace MotorPanel
             uint focBlock = SwitchBlockFoc.IsChecked == true ? 1u : 0u;
             uint sensorMode = SwitchSensor.IsChecked == true ? 1u : 0u;
 
-            // Build packet according to new spec:
-            // StartByte (1)
-            // TargetSpeed: uint32 (4 bytes) scaled *1000
-            // TargetIq: uint16 (2 bytes) scaled *1000
-            // ControlMode: byte
-            // EnableMotor: byte
-            // StartStop: byte
-            // Direction: byte
-            // FOC/Block: byte
-            // Sensored/Sensorless: byte
+            uint[] values = new uint[]
+            {
+                targetSpeedInt,
+                targetIqInt,
+                controlMode,
+                enableMotor,
+                startStop,
+                direction,
+                focBlock,
+                sensorMode
+            };
 
-            byte[] packet = new byte[1 + 4 + 2 + 6]; // 1 + 4 + 2 + 6 = 13
+            // build packet: 1 start byte + 4 bytes per uint
+            byte[] packet = new byte[1 + values.Length * 4];
             packet[0] = StartByte;
 
-            int idx = 1;
+            int index = 1;
+            foreach (uint val in values)
+            {
+                byte[] bytes = BitConverter.GetBytes(val);
+                if (!BitConverter.IsLittleEndian)
+                    Array.Reverse(bytes);
 
-            // TargetSpeed uint32
-            byte[] speedBytes = BitConverter.GetBytes(targetSpeedInt);
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(speedBytes);
-            Array.Copy(speedBytes, 0, packet, idx, 4);
-            idx += 4;
-
-            // TargetIq uint16 (clamp to ushort)
-            ushort targetIqU16 = (ushort)Math.Min(targetIqInt, ushort.MaxValue);
-            byte[] iqBytes = BitConverter.GetBytes(targetIqU16);
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(iqBytes);
-            Array.Copy(iqBytes, 0, packet, idx, 2);
-            idx += 2;
-
-            // flags as single bytes
-            packet[idx++] = (byte)controlMode;
-            packet[idx++] = (byte)enableMotor;
-            packet[idx++] = (byte)startStop;
-            packet[idx++] = (byte)direction;
-            packet[idx++] = (byte)focBlock;
-            packet[idx++] = (byte)sensorMode;
+                Array.Copy(bytes, 0, packet, index, 4);
+                index += 4;
+            }
 
             try
             {

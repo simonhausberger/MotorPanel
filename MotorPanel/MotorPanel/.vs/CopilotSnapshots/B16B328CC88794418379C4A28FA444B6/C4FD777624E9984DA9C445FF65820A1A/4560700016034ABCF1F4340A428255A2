@@ -325,14 +325,7 @@ namespace MotorPanel
                     // Use BeginInvoke to avoid blocking the serial thread
                     Dispatcher.BeginInvoke((Action)(() =>
                     {
-                        double elapsed = stopwatch != null ? stopwatch.Elapsed.TotalSeconds : time;
-                        if (!hasReceivedFirstPacket)
-                        {
-                            // set baseTime so first sample X becomes 0
-                            baseTime = elapsed;
-                            hasReceivedFirstPacket = true;
-                        }
-                        double t = elapsed - baseTime;
+                        double t = stopwatch != null ? stopwatch.Elapsed.TotalSeconds - baseTime : time;
 
                         // parse incoming integer-based packet
                         // offsets in buffer (little-endian expected):

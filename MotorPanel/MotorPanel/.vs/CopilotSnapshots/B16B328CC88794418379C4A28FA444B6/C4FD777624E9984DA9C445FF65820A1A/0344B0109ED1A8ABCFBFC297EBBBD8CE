@@ -30,7 +30,6 @@ namespace MotorPanel
         double time = 0;
         Stopwatch stopwatch;
         double baseTime = 0; // time offset to keep X values small
-        bool hasReceivedFirstPacket = false;
         const int MaxPoints = 300;
 
         public MainWindow()
@@ -220,13 +219,6 @@ namespace MotorPanel
                 Serial1.Close();
                 Serial1.Dispose();
                 Serial1 = null;
-                hasReceivedFirstPacket = false;
-                // clear chart data and baseTime on disconnect to reset X axis
-                idData.Clear();
-                iqData.Clear();
-                vdData.Clear();
-                vqData.Clear();
-                baseTime = 0;
                 LedConnected.Fill = Brushes.WhiteSmoke;
                 LogEvent("serial port closed");
                 BtnConnect.IsEnabled = true;
@@ -245,8 +237,6 @@ namespace MotorPanel
                 Serial1 = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One);
                 Serial1.DataReceived += Serial1_DataReceived;
                 Serial1.Open(); // Port erfolgreich geöffnet
-                // Reset first-packet flag so X axis will be zeroed at first incoming sample
-                hasReceivedFirstPacket = false;
                 LogEvent("serial port opened");
                 LedConnected.Fill = Brushes.Green;
                 BtnConnect.IsEnabled = false;
@@ -325,14 +315,7 @@ namespace MotorPanel
                     // Use BeginInvoke to avoid blocking the serial thread
                     Dispatcher.BeginInvoke((Action)(() =>
                     {
-                        double elapsed = stopwatch != null ? stopwatch.Elapsed.TotalSeconds : time;
-                        if (!hasReceivedFirstPacket)
-                        {
-                            // set baseTime so first sample X becomes 0
-                            baseTime = elapsed;
-                            hasReceivedFirstPacket = true;
-                        }
-                        double t = elapsed - baseTime;
+                        double t = stopwatch != null ? stopwatch.Elapsed.TotalSeconds - baseTime : time;
 
                         // parse incoming integer-based packet
                         // offsets in buffer (little-endian expected):

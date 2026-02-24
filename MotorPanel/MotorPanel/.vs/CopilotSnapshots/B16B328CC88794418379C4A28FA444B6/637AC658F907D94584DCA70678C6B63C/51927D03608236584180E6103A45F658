@@ -30,7 +30,6 @@ namespace MotorPanel
         double time = 0;
         Stopwatch stopwatch;
         double baseTime = 0; // time offset to keep X values small
-        bool hasReceivedFirstPacket = false;
         const int MaxPoints = 300;
 
         public MainWindow()
@@ -220,13 +219,6 @@ namespace MotorPanel
                 Serial1.Close();
                 Serial1.Dispose();
                 Serial1 = null;
-                hasReceivedFirstPacket = false;
-                // clear chart data and baseTime on disconnect to reset X axis
-                idData.Clear();
-                iqData.Clear();
-                vdData.Clear();
-                vqData.Clear();
-                baseTime = 0;
                 LedConnected.Fill = Brushes.WhiteSmoke;
                 LogEvent("serial port closed");
                 BtnConnect.IsEnabled = true;
@@ -245,8 +237,6 @@ namespace MotorPanel
                 Serial1 = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One);
                 Serial1.DataReceived += Serial1_DataReceived;
                 Serial1.Open(); // Port erfolgreich geöffnet
-                // Reset first-packet flag so X axis will be zeroed at first incoming sample
-                hasReceivedFirstPacket = false;
                 LogEvent("serial port opened");
                 LedConnected.Fill = Brushes.Green;
                 BtnConnect.IsEnabled = false;
@@ -325,14 +315,7 @@ namespace MotorPanel
                     // Use BeginInvoke to avoid blocking the serial thread
                     Dispatcher.BeginInvoke((Action)(() =>
                     {
-                        double elapsed = stopwatch != null ? stopwatch.Elapsed.TotalSeconds : time;
-                        if (!hasReceivedFirstPacket)
-                        {
-                            // set baseTime so first sample X becomes 0
-                            baseTime = elapsed;
-                            hasReceivedFirstPacket = true;
-                        }
-                        double t = elapsed - baseTime;
+                        double t = stopwatch != null ? stopwatch.Elapsed.TotalSeconds - baseTime : time;
 
                         // parse incoming integer-based packet
                         // offsets in buffer (little-endian expected):
@@ -471,44 +454,32 @@ namespace MotorPanel
             uint focBlock = SwitchBlockFoc.IsChecked == true ? 1u : 0u;
             uint sensorMode = SwitchSensor.IsChecked == true ? 1u : 0u;
 
-            // Build packet according to new spec:
-            // StartByte (1)
-            // TargetSpeed: uint32 (4 bytes) scaled *1000
-            // TargetIq: uint16 (2 bytes) scaled *1000
-            // ControlMode: byte
-            // EnableMotor: byte
-            // StartStop: byte
-            // Direction: byte
-            // FOC/Block: byte
-            // Sensored/Sensorless: byte
+            uint[] values = new uint[]
+            {
+                targetSpeedInt,
+                targetIqInt,
+                controlMode,
+                enableMotor,
+                startStop,
+                direction,
+                focBlock,
+                sensorMode
+            };
 
-            byte[] packet = new byte[1 + 4 + 2 + 6]; // 1 + 4 + 2 + 6 = 13
+            // build packet: 1 start byte + 4 bytes per uint
+            byte[] packet = new byte[1 + values.Length * 4];
             packet[0] = StartByte;
 
-            int idx = 1;
+            int index = 1;
+            foreach (uint val in values)
+            {
+                byte[] bytes = BitConverter.GetBytes(val);
+                if (!BitConverter.IsLittleEndian)
+                    Array.Reverse(bytes);
 
-            // TargetSpeed uint32
-            byte[] speedBytes = BitConverter.GetBytes(targetSpeedInt);
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(speedBytes);
-            Array.Copy(speedBytes, 0, packet, idx, 4);
-            idx += 4;
-
-            // TargetIq uint16 (clamp to ushort)
-            ushort targetIqU16 = (ushort)Math.Min(targetIqInt, ushort.MaxValue);
-            byte[] iqBytes = BitConverter.GetBytes(targetIqU16);
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(iqBytes);
-            Array.Copy(iqBytes, 0, packet, idx, 2);
-            idx += 2;
-
-            // flags as single bytes
-            packet[idx++] = (byte)controlMode;
-            packet[idx++] = (byte)enableMotor;
-            packet[idx++] = (byte)startStop;
-            packet[idx++] = (byte)direction;
-            packet[idx++] = (byte)focBlock;
-            packet[idx++] = (byte)sensorMode;
+                Array.Copy(bytes, 0, packet, index, 4);
+                index += 4;
+            }
 
             try
             {
