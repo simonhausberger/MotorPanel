@@ -109,12 +109,6 @@ MotorPanel is part of the complete system:
 - 🖥 MotorPanel – PC Visualization & Control
 - 💻 Embedded Firmware – Microcontroller Control Logic
 
-Developed in cooperation with:
-
-**Infineon Technologies AG**  
-Component sponsorship provided by  
-**Würth Elektronik**
-
 ---
 
 ## 🎓 Educational Purpose
