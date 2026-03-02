@@ -31,10 +31,6 @@ namespace MotorPanel
         Stopwatch stopwatch;
         double baseTime = 0; // time offset to keep X values small
         bool hasReceivedFirstPacket = false;
-        // previous sent values to detect changes and only send diffs
-        ushort prevTargetSpeed = ushort.MaxValue;
-        byte prevTargetTorque = byte.MaxValue;
-        byte prevFlags = 0xFF;
         const int MaxPoints = 300;
 
         public MainWindow()
@@ -135,8 +131,8 @@ namespace MotorPanel
             LedConnected.Fill = Brushes.WhiteSmoke;
 
             // CircularPointer auf Max fahren
-            AnimatePointer(NeedleSpeed, 2000);
-            AnimatePointer(PointerSpeed, 2000);
+            AnimatePointer(NeedleSpeed, 4000);
+            AnimatePointer(PointerSpeed, 4000);
             AnimatePointer(NeedleTorque, 2.5);
             AnimatePointer(PointerTorque, 2.5);
             AnimatePointer(NeedleIBus, 40);
@@ -443,11 +439,8 @@ namespace MotorPanel
             }
         }
         // ----------------------------------------------------- sending packets -------------------------------------------------------------
-        // reihenfolge sending (changed):
-        // - 0xA0: TargetSpeed, uint16, scaling factor 10 (value*10 -> ushort)
-        // - 0xA1: TargetTorque, uint8, scaling factor 100 (value*100 -> byte)
-        // - 0xAA: Flags byte containing all boolean flags (bits assigned below)
-        // sending only changed values (diff-send) to reduce bus traffic
+        // reihenfolge sending: TargetSpeed (unint32), TargetIq (unint16), ControlMode (unint8), EnableMotor (unint8), StartStop (unint8), Direction (unint8), FOC/Block (unint8), Sensored/Sensorless (unint8)
+        // now sending unsigned 32-bit integers (4 bytes each). Numeric values scaled by 1000. Booleans: 0 = false, 1 = true.
         private void SendControlPacket()
         {
             if (Serial1 == null || !Serial1.IsOpen)
@@ -458,82 +451,73 @@ namespace MotorPanel
             double parsedIq = 0.0;
             TryParseUserDouble(txtbTargetSpeed.Text, out parsedSpeed);
             TryParseUserDouble(txtbTargetIq.Text, out parsedIq);
-            // New scaling for diff-send protocol
-            // TargetSpeed: factor 10 -> ushort
-            int scaledSpeedInt = (int)Math.Round(parsedSpeed * 10.0);
-            if (scaledSpeedInt < 0) scaledSpeedInt = 0;
-            if (scaledSpeedInt > ushort.MaxValue) scaledSpeedInt = ushort.MaxValue;
-            ushort targetSpeedU16 = (ushort)scaledSpeedInt;
 
-            // TargetTorque (TargetIq): factor 100 -> byte
-            int scaledTorqueInt = (int)Math.Round(parsedIq * 100.0);
-            if (scaledTorqueInt < 0) scaledTorqueInt = 0;
-            if (scaledTorqueInt > byte.MaxValue) scaledTorqueInt = byte.MaxValue;
-            byte targetTorqueByte = (byte)scaledTorqueInt;
+            // scale and clamp to unsigned 32-bit range
+            double scaledSpeed = Math.Round(parsedSpeed * 1000.0);  // mal 1000 da in uint gesendet wird
+            if (scaledSpeed < 0) scaledSpeed = 0;
+            if (scaledSpeed > uint.MaxValue) scaledSpeed = uint.MaxValue;
+            uint targetSpeedInt = (uint)scaledSpeed;
+
+            double scaledIq = Math.Round(parsedIq * 1000.0);
+            if (scaledIq < 0) scaledIq = 0;
+            if (scaledIq > uint.MaxValue) scaledIq = uint.MaxValue;
+            uint targetIqInt = (uint)scaledIq;
 
             // control flags as unsigned ints: keep previous semantic (checked = torque -> 0, speed -> 1)
-            uint controlMode = SwitchControlMode.IsChecked == true ? 0u : 1u; // checked = torque (0), unchecked = speed (1)
+            uint controlMode = SwitchControlMode.IsChecked == true ? 0u : 1u;
             uint enableMotor = SwitchEnableMotor.IsChecked == true ? 1u : 0u;
             uint startStop = SwitchStartStop.IsChecked == true ? 1u : 0u;
             uint direction = SwitchDirection.IsChecked == true ? 1u : 0u;
             uint focBlock = SwitchBlockFoc.IsChecked == true ? 1u : 0u;
             uint sensorMode = SwitchSensor.IsChecked == true ? 1u : 0u;
 
-            // build flags byte (bit assignment):
-            // bit0 = ControlMode (1 = speed, 0 = torque)
-            // bit1 = EnableMotor
-            // bit2 = StartStop
-            // bit3 = Direction
-            // bit4 = FOC/Block
-            // bit5 = SensorMode
-            // bits6..7 reserved = 0
-            byte flags = (byte)(((controlMode == 1u) ? 1u : 0u)
-                                | (enableMotor << 1)
-                                | (startStop << 2)
-                                | (direction << 3)
-                                | (focBlock << 4)
-                                | (sensorMode << 5));
+            // Build packet according to new spec:
+            // StartByte (1)
+            // TargetSpeed: uint32 (4 bytes) scaled *1000
+            // TargetIq: uint16 (2 bytes) scaled *1000
+            // ControlMode: byte
+            // EnableMotor: byte
+            // StartStop: byte
+            // Direction: byte
+            // FOC/Block: byte
+            // Sensored/Sensorless: byte
+
+            byte[] packet = new byte[1 + 4 + 2 + 6]; // 1 + 4 + 2 + 6 = 13
+            packet[0] = StartByte;
+
+            int idx = 1;
+
+            // TargetSpeed uint32
+            byte[] speedBytes = BitConverter.GetBytes(targetSpeedInt);
+            if (!BitConverter.IsLittleEndian)
+                Array.Reverse(speedBytes);
+            Array.Copy(speedBytes, 0, packet, idx, 4);
+            idx += 4;
+
+            // TargetIq uint16 (clamp to ushort)
+            ushort targetIqU16 = (ushort)Math.Min(targetIqInt, ushort.MaxValue);
+            byte[] iqBytes = BitConverter.GetBytes(targetIqU16);
+            if (!BitConverter.IsLittleEndian)
+                Array.Reverse(iqBytes);
+            Array.Copy(iqBytes, 0, packet, idx, 2);
+            idx += 2;
+
+            // flags as single bytes
+            packet[idx++] = (byte)controlMode;
+            packet[idx++] = (byte)enableMotor;
+            packet[idx++] = (byte)startStop;
+            packet[idx++] = (byte)direction;
+            packet[idx++] = (byte)focBlock;
+            packet[idx++] = (byte)sensorMode;
 
             try
             {
-                // send only changed values
-                // 0xA0: TargetSpeed (2 bytes)
-                if (prevTargetSpeed != targetSpeedU16)
+                lock (Serial1)
                 {
-                    byte[] pkt = new byte[1 + 2];
-                    pkt[0] = 0xA0;
-                    byte[] b = BitConverter.GetBytes(targetSpeedU16);
-                    if (!BitConverter.IsLittleEndian) Array.Reverse(b);
-                    pkt[1] = b[0]; pkt[2 - 1 + 1] = b.Length > 1 ? b[1] : (byte)0; // ensure copy
-                    // simpler copy
-                    pkt[1] = b[0];
-                    pkt[2] = b[1];
-                    lock (Serial1) { Serial1.Write(pkt, 0, pkt.Length); }
-                    LogEvent($"sent TargetSpeed (A0) {targetSpeedU16}");
-                    prevTargetSpeed = targetSpeedU16;
+                    Serial1.Write(packet, 0, packet.Length);
                 }
 
-                // 0xA1: TargetTorque (1 byte)
-                if (prevTargetTorque != targetTorqueByte)
-                {
-                    byte[] pkt = new byte[1 + 1];
-                    pkt[0] = 0xA1;
-                    pkt[1] = targetTorqueByte;
-                    lock (Serial1) { Serial1.Write(pkt, 0, pkt.Length); }
-                    LogEvent($"sent TargetTorque (A1) {targetTorqueByte}");
-                    prevTargetTorque = targetTorqueByte;
-                }
-
-                // 0xAA: flags byte
-                if (prevFlags != flags)
-                {
-                    byte[] pkt = new byte[1 + 1];
-                    pkt[0] = 0xAA;
-                    pkt[1] = flags;
-                    lock (Serial1) { Serial1.Write(pkt, 0, pkt.Length); }
-                    LogEvent($"sent Flags (AA) 0x{flags:X2}");
-                    prevFlags = flags;
-                }
+                LogEvent($"control packet sent ({packet.Length} bytes)");
             }
             catch (Exception ex)
             {
@@ -656,7 +640,7 @@ namespace MotorPanel
 
             if (TryParseUserDouble(txtbTargetSpeed.Text, out double speed))
             {
-                if (speed >= 0 && speed <= 2000)
+                if (speed >= 0 && speed <= 4000)
                 {
                     // set reference pointer directly so it stays at the entered target
                     PointerSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
@@ -664,7 +648,7 @@ namespace MotorPanel
                 }
                 else
                 {
-                    MessageBox.Show("The value must be between 0 and 2000.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("The value must be between 0 and 4000.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             else
