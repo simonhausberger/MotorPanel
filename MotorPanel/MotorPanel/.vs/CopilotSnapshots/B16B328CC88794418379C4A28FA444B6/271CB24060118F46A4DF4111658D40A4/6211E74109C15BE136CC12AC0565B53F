@@ -412,8 +412,8 @@ namespace MotorPanel
                         vdData.Add(new ChartPoint { X = t, Y = vd });
                         vqData.Add(new ChartPoint { X = t, Y = vq });
 
-                        LedError.Fill = errFlag ? Brushes.Red : Brushes.WhiteSmoke;
-                        LedWarning.Fill = warnFlag ? Brushes.Orange : Brushes.WhiteSmoke;
+                        LedError.Fill = err == 1 ? Brushes.Red : Brushes.WhiteSmoke;
+                        LedWarning.Fill = warn == 1 ? Brushes.Orange : Brushes.WhiteSmoke;
 
                         // Trim collections to sliding window and adjust X by removing
                         // the oldest X (baseTime) so values remain small.

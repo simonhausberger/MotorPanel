@@ -502,7 +502,7 @@
                  HorizontalAlignment="Stretch" TextChanged="txtbTargetSpeed_TextChanged"/>
 
                 <!-- Iq Sollwert -->
-                <TextBlock Text="target Iq [A]:"
+                <TextBlock Text="target torque [Nm]:"
                    Grid.Row="1"
                    Margin="5"
                    VerticalAlignment="Center"/>
