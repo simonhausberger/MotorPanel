@@ -12,8 +12,9 @@ namespace MotorPanel
     {
         public App()
         {
-            //SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1JGaF1cXmhKYVJyWmFZfVhgd19CZFZQR2Y/P1ZhSXxVdkdiWn9bdXFRQWhdUUd9XEA=");    //just 30 days
-            SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjGyl/VkR+XU9Ff1RBQmJNYVF2R2VJfFR0cF9HY0wxOX1dQl9lSXxSdUVrXX9fd3RdR2dXUkY=");          //student license
+            //SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1JGaF1cXmhKYVJyWmFZfVhgd19CZFZQR2Y/P1ZhSXxVdkdiWn9bdXFRQWhdUUd9XEA=");    // just 30 days
+            //SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjGyl/VkR+XU9Ff1RBQmJNYVF2R2VJfFR0cF9HY0wxOX1dQl9lSXxSdUVrXX9fd3RdR2dXUkY=");        // student license
+            SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1JHaF5cWWdCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdlWXxccXVWQ2RfVUV+WkZWYEo=");  // new student license
         }
     }
 

@@ -17,7 +17,7 @@ namespace MotorPanel
         const int baudRate = 115200;
 
         const byte StartByte = 0xAA;
-        // new incoming layout: speed(uint16)+torque(uint8)+8*uint16+errWarn(uint8) = 20 bytes payload
+        // new incoming layout: speed(uint16)+torque(uint8)+8*uint16+status(uint8) = 20 bytes payload
         const int IncomingPayloadSize = 2 + 1 + 8 * 2 + 1; // 20
         const int PacketSize = 1 + IncomingPayloadSize; // start byte + payload = 21 bytes
 
@@ -310,7 +310,7 @@ namespace MotorPanel
             }
         }
         // ----------------------------------------------------- receiving - event handler ---------------------------------------------------
-        // reihenfolge receiving: speed (unint16), torque (unint8), IBus (unint16), VBus (unint16), PCBTemp (unint16), WindingTemp (unint16), id (unint16), iq (unint16), vd (unint16), vq (unint16), error & warning kombiniert in ein byte (bit0 = error, bit1 = warning, rest reserved)
+        // reihenfolge receiving: speed (unint16), torque (unint8), IBus (unint16), VBus (unint16), PCBTemp (unint16), WindingTemp (unint16), id (unint16), iq (unint16), vd (unint16), vq (unint16), status byte (bit0 = error, bit1 = warning, bit2 = enabled, bits 3..7 reserved)
         private void Serial1_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             try
@@ -350,9 +350,8 @@ namespace MotorPanel
                         // 13-14: uint16 iq (scaled *10)
                         // 15-16: uint16 vd (scaled *10)
                         // 17-18: uint16 vq (scaled *10)
-                        // 19:   uint8 errWarn (bit0=error, bit1=warning)
+                        // 19:   uint8 status (bit0=error, bit1=enabled, bit2=warning)
 
-                        bool isLittle = BitConverter.IsLittleEndian;
 
                         ushort rawSpeed = BitConverter.ToUInt16(buffer, 0);
                         double speed = rawSpeed / 10.0;
@@ -384,9 +383,11 @@ namespace MotorPanel
                         ushort rawVq = BitConverter.ToUInt16(buffer, 17);
                         double vq = rawVq / 10.0;
 
-                        byte errWarn = buffer[19];
-                        bool errFlag = (errWarn & 0x01) != 0;
-                        bool warnFlag = (errWarn & 0x02) != 0;
+                        byte status = buffer[19];
+                        // status bits: bit0 = error, bit1 = enabled, bit2 = warning, bits3..7 reserved
+                        bool errFlag = (status & 0x01) != 0;
+                        bool enabledFlag = (status & 0x02) != 0;
+                        bool warnFlag = (status & 0x04) != 0;
 
                         // update UI elements
                         NeedleSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
@@ -412,6 +413,8 @@ namespace MotorPanel
                         vdData.Add(new ChartPoint { X = t, Y = vd });
                         vqData.Add(new ChartPoint { X = t, Y = vq });
 
+                        // update status LEDs from combined status byte
+                        LedEnabled.Fill = enabledFlag ? Brushes.Green : Brushes.WhiteSmoke;
                         LedError.Fill = errFlag ? Brushes.Red : Brushes.WhiteSmoke;
                         LedWarning.Fill = warnFlag ? Brushes.Orange : Brushes.WhiteSmoke;
 
@@ -499,12 +502,11 @@ namespace MotorPanel
                 // 0xA0: TargetSpeed (2 bytes)
                 if (prevTargetSpeed != targetSpeedU16)
                 {
-                    byte[] pkt = new byte[1 + 2];
+                    byte[] pkt = new byte[3]; // 1 + 2
                     pkt[0] = 0xA0;
                     byte[] b = BitConverter.GetBytes(targetSpeedU16);
                     if (!BitConverter.IsLittleEndian) Array.Reverse(b);
-                    pkt[1] = b[0]; pkt[2 - 1 + 1] = b.Length > 1 ? b[1] : (byte)0; // ensure copy
-                    // simpler copy
+                    // copy two bytes little-endian
                     pkt[1] = b[0];
                     pkt[2] = b[1];
                     lock (Serial1) { Serial1.Write(pkt, 0, pkt.Length); }
