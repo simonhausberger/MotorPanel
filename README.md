@@ -124,3 +124,4 @@ This application enables students to:
 It serves as the graphical interface between theory and practical experimentation.
 
 ---
+This README was written by ChatGPT from OpenAI
