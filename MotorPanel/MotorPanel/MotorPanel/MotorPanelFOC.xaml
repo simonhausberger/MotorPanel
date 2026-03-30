@@ -1,0 +1,865 @@
+﻿<Window x:Class="MotorPanel.MotorPanelFOC"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MotorPanel"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        xmlns:gauge="clr-namespace:Syncfusion.UI.Xaml.Gauges;assembly=Syncfusion.SfGauge.Wpf"
+        xmlns:chart="clr-namespace:Syncfusion.UI.Xaml.Charts;assembly=Syncfusion.SfChart.WPF"
+        mc:Ignorable="d"
+        Title="MotorPanelFOC"
+        Height="800"
+        Width="1500"
+        Loaded="Window_Loaded">
+
+    <DockPanel LastChildFill="True">
+        <!-- Menü-Leiste oben -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="Back To Setup Window" Click="BackToSetupWindow_Click">
+            </MenuItem>
+
+            <MenuItem Header="help" Click="help_Click">
+            </MenuItem>
+        </Menu>
+
+
+        <Grid Margin="10">
+            <!-- 7 Zeilen -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="400*" />
+                <RowDefinition Height="200*" />
+                <RowDefinition Height="200*" />
+                <RowDefinition Height="30*" />
+                <RowDefinition Height="70*" />
+                <RowDefinition Height="200*" />
+                <RowDefinition Height="200*" />
+            </Grid.RowDefinitions>
+
+            <!-- 8 Spalten -->
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="500*" />
+                <ColumnDefinition Width="100*" />
+                <ColumnDefinition Width="470*" />
+                <ColumnDefinition Width="400*" />
+                <ColumnDefinition Width="30*" />
+                <ColumnDefinition Width="350*" />
+                <ColumnDefinition Width="100*" />
+                <ColumnDefinition Width="550*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Speed -->
+            <gauge:SfCircularGauge 
+                           Grid.Row="0" Grid.Column="0"
+                           HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                           HeaderAlignment="Custom"
+                           GaugeHeaderPosition="0.63,0.75">
+
+                <gauge:SfCircularGauge.GaugeHeader>
+                    <TextBlock Text="speed [rpm]"
+                       Height="50"
+                       Width="140"
+                       FontSize="13"
+                       Foreground="Black"
+                       FontWeight="SemiBold" />
+                </gauge:SfCircularGauge.GaugeHeader>
+
+                <gauge:SfCircularGauge.Scales>
+                    <gauge:CircularScale ShowRim="True"
+                                 RimStroke="LightGray"
+                                 RimStrokeThickness="3"
+                                 LabelOffset="0.1"
+                                 StartValue="0"
+                                 EndValue="2000">
+
+                        <gauge:CircularScale.MajorTickSettings>
+                            <gauge:MajorTickSetting Length="10"
+                                            StrokeThickness="3" />
+                        </gauge:CircularScale.MajorTickSettings>
+
+                        <gauge:CircularScale.MinorTickSettings>
+                            <gauge:MinorTickSetting Length="5"
+                                            StrokeThickness="2" />
+                        </gauge:CircularScale.MinorTickSettings>
+
+                        <gauge:CircularScale.Ranges>
+                            <gauge:CircularRange StartValue="0"
+                                         EndValue="0"
+                                         Stroke="Gray" />
+                        </gauge:CircularScale.Ranges>
+                        <gauge:CircularScale.Pointers>
+                            <gauge:CircularPointer PointerType="NeedlePointer"
+                                           x:Name="NeedleSpeed"
+                                           Value="0"
+                                           NeedleLengthFactor="0.6"
+                                           NeedlePointerType="Triangle"
+                                           PointerCapDiameter="12"
+                                           NeedlePointerStroke="#757575"
+                                           KnobFill="#757575"
+                                           KnobStroke="#757575"
+                                           NeedlePointerStrokeThickness="7" />
+                            <gauge:CircularPointer PointerType="RangePointer"
+                                           Value="0"
+                                           RangePointerStrokeThickness="5"
+                                           RangePointerStroke="#27beb6" />
+                            <gauge:CircularPointer PointerType="SymbolPointer"
+                                           x:Name="PointerSpeed"
+                                           Value="0"
+                                           SymbolPointerHeight="12"
+                                           SymbolPointerWidth="12"
+                                           Symbol="InvertedTriangle"
+                                           SymbolPointerStroke="#757575" />
+                        </gauge:CircularScale.Pointers>
+                    </gauge:CircularScale>
+                </gauge:SfCircularGauge.Scales>
+            </gauge:SfCircularGauge>
+
+            <!-- Torque -->
+            <gauge:SfCircularGauge 
+                   Grid.Row="1" Grid.Column="0" Grid.RowSpan="2"
+                   HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                   HeaderAlignment="Custom"
+                   GaugeHeaderPosition="0.63,0.75">
+
+                <gauge:SfCircularGauge.GaugeHeader>
+                    <TextBlock Text="torque [Nm]"
+               Height="50"
+               Width="140"
+               FontSize="13"
+               Foreground="Black"
+               FontWeight="SemiBold" />
+                </gauge:SfCircularGauge.GaugeHeader>
+
+                <gauge:SfCircularGauge.Scales>
+                    <gauge:CircularScale ShowRim="True"
+                         RimStroke="LightGray"
+                         RimStrokeThickness="3"
+                         LabelOffset="0.1"
+                         StartValue="0"
+                         EndValue="2.5">
+
+                        <gauge:CircularScale.MajorTickSettings>
+                            <gauge:MajorTickSetting Length="10"
+                                    StrokeThickness="3" />
+                        </gauge:CircularScale.MajorTickSettings>
+
+                        <gauge:CircularScale.MinorTickSettings>
+                            <gauge:MinorTickSetting Length="5"
+                                    StrokeThickness="2" />
+                        </gauge:CircularScale.MinorTickSettings>
+
+                        <gauge:CircularScale.Ranges>
+                            <gauge:CircularRange StartValue="0"
+                                 EndValue="0"
+                                 Stroke="Gray" />
+                        </gauge:CircularScale.Ranges>
+                        <gauge:CircularScale.Pointers>
+                            <gauge:CircularPointer PointerType="NeedlePointer"
+                                   x:Name="NeedleTorque"
+                                   Value="0"
+                                   NeedleLengthFactor="0.6"
+                                   NeedlePointerType="Triangle"
+                                   PointerCapDiameter="12"
+                                   NeedlePointerStroke="#757575"
+                                   KnobFill="#757575"
+                                   KnobStroke="#757575"
+                                   NeedlePointerStrokeThickness="7" />
+                            <gauge:CircularPointer PointerType="RangePointer"
+                                   Value="0"
+                                   RangePointerStrokeThickness="5"
+                                   RangePointerStroke="#27beb6" />
+                            <gauge:CircularPointer PointerType="SymbolPointer"
+                                   x:Name="PointerTorque"
+                                   Value="0"
+                                   SymbolPointerHeight="12"
+                                   SymbolPointerWidth="12"
+                                   Symbol="InvertedTriangle"
+                                   SymbolPointerStroke="#757575" />
+                        </gauge:CircularScale.Pointers>
+                    </gauge:CircularScale>
+                </gauge:SfCircularGauge.Scales>
+            </gauge:SfCircularGauge>
+
+
+            <!-- PCB-Temp -->
+            <StackPanel Grid.Row="5" Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <TextBlock Text="PCB-temp [°C]"  FontSize="13" FontWeight="SemiBold" Foreground="Black" Margin="0,0,0,5" HorizontalAlignment="Center"/>
+                <gauge:SfLinearGauge
+                         Grid.Row="1" Grid.Column="0"
+                         HorizontalAlignment="Stretch"
+                         VerticalAlignment="Stretch">
+                    <gauge:SfLinearGauge.MainScale>
+                        <gauge:LinearScale 
+                           Minimum="20"
+                           Maximum="80"   
+                           Interval="10"
+                           LabelStroke="#424242"
+                           MajorTickStroke="Gray"
+                           MajorTickSize="12"
+                           MajorTickStrokeThickness="2"
+                           MinorTickStroke="Gray"
+                           MinorTickSize="7"
+                           MinorTickStrokeThickness="1"
+                           MinorTicksPerInterval="3"
+                           ScaleBarStroke="#E0E0E0"
+                           ScaleBarLength="250"
+                           ScaleBarSize="10">
+
+                            <gauge:LinearScale.Pointers>
+                                <gauge:LinearPointer PointerType="SymbolPointer"
+                                     x:Name="PointerPCBTemp"
+                                     Value="0"
+                                     SymbolPointerHeight="10"
+                                     SymbolPointerWidth="10"
+                                     SymbolPointerPosition="Below"
+                                     SymbolPointerStroke="#757575" />
+                                <gauge:LinearPointer PointerType="BarPointer"
+                                     x:Name="BarPCBTemp"
+                                     Value="0"
+                                     BarPointerStroke="#757575"
+                                     BarPointerStrokeThickness="10" />
+                            </gauge:LinearScale.Pointers>
+                        </gauge:LinearScale>
+                    </gauge:SfLinearGauge.MainScale>
+                </gauge:SfLinearGauge>
+            </StackPanel>
+
+            <!-- Winding-Temp -->
+            <StackPanel Grid.Row="6" Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <TextBlock Text="winding-temp [°C]"  FontSize="13" FontWeight="SemiBold" Foreground="Black" Margin="0,0,0,5" HorizontalAlignment="Center"/>
+                <gauge:SfLinearGauge
+                 Grid.Row="1" Grid.Column="0"
+                 HorizontalAlignment="Stretch"
+                 VerticalAlignment="Stretch">
+                    <gauge:SfLinearGauge.MainScale>
+                        <gauge:LinearScale 
+                   Minimum="20"
+                   Maximum="80"   
+                   Interval="10"
+                   LabelStroke="#424242"
+                   MajorTickStroke="Gray"
+                   MajorTickSize="12"
+                   MajorTickStrokeThickness="2"
+                   MinorTickStroke="Gray"
+                   MinorTickSize="7"
+                   MinorTickStrokeThickness="1"
+                   MinorTicksPerInterval="3"
+                   ScaleBarStroke="#E0E0E0"
+                   ScaleBarLength="250"
+                   ScaleBarSize="10">
+
+                            <gauge:LinearScale.Pointers>
+                                <gauge:LinearPointer PointerType="SymbolPointer"
+                             x:Name="PointerWindingTemp"
+                             Value="0"
+                             SymbolPointerHeight="10"
+                             SymbolPointerWidth="10"
+                             SymbolPointerPosition="Below"
+                             SymbolPointerStroke="#757575" />
+                                <gauge:LinearPointer PointerType="BarPointer"
+                             x:Name="BarWindingTemp"
+                             Value="0"
+                             BarPointerStroke="#757575"
+                             BarPointerStrokeThickness="10" />
+                            </gauge:LinearScale.Pointers>
+                        </gauge:LinearScale>
+                    </gauge:SfLinearGauge.MainScale>
+                </gauge:SfLinearGauge>
+            </StackPanel>
+
+            <!-- Id, Iq Chart -->
+            <chart:SfChart x:Name="CurrentChart"
+                       Grid.Row="0"
+                       Grid.Column="2"
+                       Grid.ColumnSpan="4">
+                <!-- X-Achse -->
+                <chart:SfChart.PrimaryAxis>
+                    <chart:NumericalAxis Header=""
+                                     AutoScrollingMode="End"
+                                     AutoScrollingDelta="5"
+                                     EnableAutoIntervalOnZooming="True"/>
+                </chart:SfChart.PrimaryAxis>
+
+                <!-- Y-Achse -->
+                <chart:SfChart.SecondaryAxis>
+                    <chart:NumericalAxis Header="Id, Iq [A]"
+                                     AutoScrollingMode="End"
+                                     AutoScrollingDelta="5"/>
+                </chart:SfChart.SecondaryAxis>
+
+                <chart:FastLineSeries x:Name="IdSeries" Label="Id"/>
+                <chart:FastLineSeries x:Name="IqSeries" Label="Iq"/>
+
+                <chart:SfChart.Legend>
+                    <chart:ChartLegend DockPosition="Floating"
+                       VerticalAlignment="Top"
+                       HorizontalAlignment="Right"/>
+                </chart:SfChart.Legend>
+
+            </chart:SfChart>
+
+            <!-- vd, vq Chart -->
+            <chart:SfChart x:Name="VoltageChart"
+                Grid.Row="1"
+                 Grid.RowSpan="2"
+                Grid.Column="2"
+                Grid.ColumnSpan="4">
+                <!-- X-Achse -->
+                <chart:SfChart.PrimaryAxis>
+                    <chart:NumericalAxis Header=""
+                              AutoScrollingMode="End"
+                              AutoScrollingDelta="5"
+                              EnableAutoIntervalOnZooming="True"/>
+                </chart:SfChart.PrimaryAxis>
+
+                <!-- Y-Achse -->
+                <chart:SfChart.SecondaryAxis>
+                    <chart:NumericalAxis Header="vd, vq [V]"
+                              AutoScrollingMode="End"
+                              AutoScrollingDelta="5"/>
+                </chart:SfChart.SecondaryAxis>
+
+                <chart:FastLineSeries x:Name="vdSeries" Label="vd"/>
+                <chart:FastLineSeries x:Name="vqSeries" Label="vq"/>
+
+                <chart:SfChart.Legend>
+                    <chart:ChartLegend DockPosition="Floating"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Right"/>
+                </chart:SfChart.Legend>
+
+            </chart:SfChart>
+
+            <!-- IBus -->
+            <gauge:SfCircularGauge 
+                   Grid.Row="0" Grid.Column="7"
+                   HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                   HeaderAlignment="Custom"
+                   GaugeHeaderPosition="0.63,0.75">
+
+                <gauge:SfCircularGauge.GaugeHeader>
+                    <TextBlock Text="   I_Bus [A]"
+               Height="50"
+               Width="140"
+               FontSize="13"
+               Foreground="Black"
+               FontWeight="SemiBold" />
+                </gauge:SfCircularGauge.GaugeHeader>
+
+                <gauge:SfCircularGauge.Scales>
+                    <gauge:CircularScale ShowRim="True"
+                         RimStroke="LightGray"
+                         RimStrokeThickness="3"
+                         LabelOffset="0.1"
+                         StartValue="0"
+                         EndValue="40">
+
+                        <gauge:CircularScale.MajorTickSettings>
+                            <gauge:MajorTickSetting Length="10"
+                                    StrokeThickness="3" />
+                        </gauge:CircularScale.MajorTickSettings>
+
+                        <gauge:CircularScale.MinorTickSettings>
+                            <gauge:MinorTickSetting Length="5"
+                                    StrokeThickness="2" />
+                        </gauge:CircularScale.MinorTickSettings>
+
+                        <gauge:CircularScale.Ranges>
+                            <gauge:CircularRange StartValue="0"
+                                 EndValue="0"
+                                 Stroke="Gray" />
+                        </gauge:CircularScale.Ranges>
+                        <gauge:CircularScale.Pointers>
+                            <gauge:CircularPointer PointerType="NeedlePointer"
+                                   x:Name="NeedleIBus"
+                                   Value="0"
+                                   NeedleLengthFactor="0.6"
+                                   NeedlePointerType="Triangle"
+                                   PointerCapDiameter="12"
+                                   NeedlePointerStroke="#757575"
+                                   KnobFill="#757575"
+                                   KnobStroke="#757575"
+                                   NeedlePointerStrokeThickness="7" />
+                            <gauge:CircularPointer PointerType="RangePointer"
+                                   Value="0"
+                                   RangePointerStrokeThickness="5"
+                                   RangePointerStroke="#27beb6" />
+                        </gauge:CircularScale.Pointers>
+                    </gauge:CircularScale>
+                </gauge:SfCircularGauge.Scales>
+            </gauge:SfCircularGauge>
+
+            <!-- VBus -->
+            <gauge:SfCircularGauge 
+           Grid.Row="1"  Grid.RowSpan="2" Grid.Column="7"
+           HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+           HeaderAlignment="Custom"
+           GaugeHeaderPosition="0.63,0.75">
+
+                <gauge:SfCircularGauge.GaugeHeader>
+                    <TextBlock Text="   V_Bus [V]"
+       Height="50"
+       Width="140"
+       FontSize="13"
+       Foreground="Black"
+       FontWeight="SemiBold" />
+                </gauge:SfCircularGauge.GaugeHeader>
+
+                <gauge:SfCircularGauge.Scales>
+                    <gauge:CircularScale ShowRim="True"
+                 RimStroke="LightGray"
+                 RimStrokeThickness="3"
+                 LabelOffset="0.1"
+                 StartValue="0"
+                 EndValue="50">
+
+                        <gauge:CircularScale.MajorTickSettings>
+                            <gauge:MajorTickSetting Length="10"
+                            StrokeThickness="3" />
+                        </gauge:CircularScale.MajorTickSettings>
+
+                        <gauge:CircularScale.MinorTickSettings>
+                            <gauge:MinorTickSetting Length="5"
+                            StrokeThickness="2" />
+                        </gauge:CircularScale.MinorTickSettings>
+
+                        <gauge:CircularScale.Ranges>
+                            <gauge:CircularRange StartValue="0"
+                         EndValue="0"
+                         Stroke="Gray" />
+                        </gauge:CircularScale.Ranges>
+                        <gauge:CircularScale.Pointers>
+                            <gauge:CircularPointer PointerType="NeedlePointer"
+                           x:Name="NeedleVBus"
+                           Value="0"
+                           NeedleLengthFactor="0.6"
+                           NeedlePointerType="Triangle"
+                           PointerCapDiameter="12"
+                           NeedlePointerStroke="#757575"
+                           KnobFill="#757575"
+                           KnobStroke="#757575"
+                           NeedlePointerStrokeThickness="7" />
+                            <gauge:CircularPointer PointerType="RangePointer"
+                           Value="0"
+                           RangePointerStrokeThickness="5"
+                           RangePointerStroke="#27beb6" />
+                        </gauge:CircularScale.Pointers>
+                    </gauge:CircularScale>
+                </gauge:SfCircularGauge.Scales>
+            </gauge:SfCircularGauge>
+
+            <!-- Target-Box -->
+            <GroupBox Header="motor-targets"
+          Grid.Row="4"
+          Grid.RowSpan="3"
+          Grid.Column="2"
+          Grid.ColumnSpan="1"
+          Margin="10"
+          FontWeight="SemiBold">
+
+                <Grid Margin="10">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30*"/>
+                        <RowDefinition Height="30*"/>
+                        <RowDefinition Height="30*"/>
+                        <RowDefinition Height="40*"/>
+
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="70*"/>
+                    </Grid.ColumnDefinitions>
+
+
+                    <!-- Target Speed -->
+                    <TextBlock Text="target speed [rpm]:"
+                   Grid.Row="0"
+                   Margin="5"
+                   VerticalAlignment="Center"/>
+
+                    <TextBox x:Name="txtbTargetSpeed"
+                    Grid.Row="0"
+                 Grid.Column="1"
+                 Margin="5"
+                 Height="18"
+                 HorizontalContentAlignment="Center"
+                 VerticalContentAlignment="Center"
+                 HorizontalAlignment="Stretch" TextChanged="txtbTargetSpeed_TextChanged"/>
+
+                    <!-- Iq Sollwert -->
+                    <TextBlock Text="target torque [Nm]:"
+                   Grid.Row="1"
+                   Margin="5"
+                   VerticalAlignment="Center"/>
+
+                    <TextBox x:Name="txtbTargetIq"
+                    Grid.Row="1"
+                 Grid.Column="1"
+                 Margin="5"
+                 Height="18"
+                 HorizontalContentAlignment="Center"
+                 VerticalContentAlignment="Center"
+                 HorizontalAlignment="Stretch" TextChanged="txtbTargetIq_TextChanged"/>
+
+
+                    <!-- Button -->
+                    <Button x:Name="BtnApplyTarget"
+                    Grid.Row="2"
+                Grid.ColumnSpan="2"
+                Margin="5"
+                Height="32"
+                Content="apply target"
+                FontWeight="SemiBold"
+                Background="#757575 "
+                Foreground="White"
+                BorderThickness="0"
+                Cursor="Hand" Click="BtnApplyTarget_Click">
+
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="border"
+                    Background="{TemplateBinding Background}"
+                    CornerRadius="8"
+                    Padding="10,4">
+                                    <ContentPresenter 
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"/>
+                                </Border>
+
+                                <ControlTemplate.Triggers>
+
+                                    <!-- Hover -->
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="border"
+                            Property="Background"
+                            Value="#3A3A3D"/>
+                                    </Trigger>
+
+                                    <!-- Klick -->
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="border"
+                            Property="Background"
+                            Value="#1F1F22"/>
+                                    </Trigger>
+
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+
+                    <!-- Speed / Torque Mode -->
+                    <Grid Grid.Row="3" Grid.ColumnSpan="2" Margin="5">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="80"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="speed"
+               Grid.Column="0"
+               VerticalAlignment="Center"
+               HorizontalAlignment="Right"/>
+
+                        <CheckBox x:Name="SwitchControlMode"
+              Grid.Column="1"
+              Width="60"
+              Height="30"
+              IsChecked="false"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center" Click="SwitchControlMode_Click">
+
+                            <CheckBox.Template>
+                                <ControlTemplate TargetType="CheckBox">
+                                    <Grid Width="60" Height="30">
+
+                                        <Border Background="LightGray"
+                            CornerRadius="15"/>
+
+                                        <Ellipse x:Name="Knob"
+                             Width="26"
+                             Height="26"
+                             Fill="White"
+                             Margin="2,2,32,2"/>
+                                    </Grid>
+
+                                    <ControlTemplate.Triggers>
+
+                                        <!-- nur Bewegung -->
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Knob"
+                                Property="Margin"
+                                Value="32,2,2,2"/>
+                                        </Trigger>
+
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </CheckBox.Template>
+                        </CheckBox>
+
+                        <TextBlock Text="torque"
+               Grid.Column="2"
+               VerticalAlignment="Center"
+               HorizontalAlignment="Left"/>
+
+                    </Grid>
+
+
+
+                </Grid>
+            </GroupBox>
+
+
+            <!-- User-Buttons -->
+            <GroupBox Header="user-buttons"
+          Grid.Row="4" Grid.RowSpan="3"
+          Grid.Column="3" Grid.ColumnSpan="2"
+          Margin="10"
+          FontWeight="SemiBold">
+
+                <StackPanel Orientation="Vertical" Margin="10" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+
+                    <!-- Start/Stop -->
+                    <Grid Margin="0,5,0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="70"/>
+                            <!-- Linkes Label -->
+                            <ColumnDefinition Width="70"/>
+                            <!-- Switch -->
+                            <ColumnDefinition Width="70"/>
+                            <!-- Rechtes Label -->
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="stop" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+
+                        <CheckBox x:Name="SwitchStartStop" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" Click="SwitchStartStop_Click">
+                            <CheckBox.Template>
+                                <ControlTemplate TargetType="CheckBox">
+                                    <Grid Width="60" Height="30">
+                                        <Border Background="LightGray" CornerRadius="15"/>
+                                        <Ellipse x:Name="Knob" Width="26" Height="26" Fill="White" Margin="2,2,32,2"/>
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Knob" Property="Margin" Value="32,2,2,2"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </CheckBox.Template>
+                        </CheckBox>
+
+                        <TextBlock Grid.Column="2" Text="start" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    </Grid>
+
+                    <!-- Richtung Links/Rechts -->
+                    <Grid Margin="0,5,0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="70"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="left" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                        <CheckBox x:Name="SwitchDirection" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" Click="SwitchDirection_Click">
+                            <CheckBox.Template>
+                                <ControlTemplate TargetType="CheckBox">
+                                    <Grid Width="60" Height="30">
+                                        <Border Background="LightGray" CornerRadius="15"/>
+                                        <Ellipse x:Name="Knob" Width="26" Height="26" Fill="White" Margin="2,2,32,2"/>
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Knob" Property="Margin" Value="32,2,2,2"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </CheckBox.Template>
+                        </CheckBox>
+                        <TextBlock Grid.Column="2" Text="right" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    </Grid>
+
+
+                    <!-- Kommutierung Sensored/Sensorless -->
+                    <Grid Margin="0,5,0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="70"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="sensored" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                        <CheckBox x:Name="SwitchSensor" Grid.Column="1" Width="60" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" Click="SwitchSensor_Click">
+                            <CheckBox.Template>
+                                <ControlTemplate TargetType="CheckBox">
+                                    <Grid Width="60" Height="30">
+                                        <Border Background="LightGray" CornerRadius="15"/>
+                                        <Ellipse x:Name="Knob" Width="26" Height="26" Fill="White" Margin="2,2,32,2"/>
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Knob" Property="Margin" Value="32,2,2,2"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </CheckBox.Template>
+                        </CheckBox>
+                        <TextBlock Grid.Column="2" Text="sensorless" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    </Grid>
+
+                    <!--System State Log-->
+                    <Grid Margin="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="20*"/>
+                            <ColumnDefinition Width="89*"/>
+                        </Grid.ColumnDefinitions>
+                        <ListBox x:Name="SystemSateLogListBox" FontFamily="Consolas" FontSize="12" Grid.ColumnSpan="2" Height="52" VerticalAlignment="Top"/>
+                    </Grid>
+                </StackPanel>
+
+            </GroupBox>
+
+            <!-- Event Log -->
+            <GroupBox Header="event-logs"
+          Grid.Row="4"
+          Grid.RowSpan="2"
+          Grid.Column="5"
+          Grid.ColumnSpan="3"
+          Margin="10"
+          FontWeight="SemiBold">
+
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="20*"/>
+                        <ColumnDefinition Width="89*"/>
+                    </Grid.ColumnDefinitions>
+                    <ListBox x:Name="EventLogListBox" FontFamily="Consolas" FontSize="12" Grid.ColumnSpan="2"/>
+
+
+                </Grid>
+            </GroupBox>
+
+            <!-- status leds -->
+            <GroupBox Header="status"
+          Grid.Row="6"
+          Grid.Column="5"
+          Grid.ColumnSpan="3"
+          Margin="10"
+          FontWeight="SemiBold">
+
+                <StackPanel Margin="10">
+
+                    <!-- LEDs -->
+                    <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Margin="10">
+
+                        <StackPanel Orientation="Horizontal" Margin="15,5">
+                            <Ellipse x:Name="LedError"
+                         Width="14"
+                         Height="14"
+                         Fill="Red">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect Color="Red"
+                                          BlurRadius="10"
+                                          ShadowDepth="0"
+                                          Opacity="0.8"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                            <TextBlock Text=" error"
+                           VerticalAlignment="Center"
+                           Margin="5,0"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="15,5">
+                            <Ellipse x:Name="LedWarning"
+                         Width="14"
+                         Height="14"
+                         Fill="Orange">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect Color="Orange"
+                                          BlurRadius="10"
+                                          ShadowDepth="0"
+                                          Opacity="0.8"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                            <TextBlock Text=" warning"
+                           VerticalAlignment="Center"
+                           Margin="5,0"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="15,5">
+                            <Ellipse x:Name="LedEnabled"
+                         Width="14"
+                         Height="14"
+                         Fill="Green">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect Color="Green"
+                                          BlurRadius="10"
+                                          ShadowDepth="0"
+                                          Opacity="0.8"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                            <TextBlock Text=" enabled"
+                           VerticalAlignment="Center"
+                           Margin="5,0"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="15,5">
+                            <Ellipse x:Name="LedConnected"
+                         Width="14"
+                         Height="14"
+                         Fill="Green">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect Color="Green"
+                                          BlurRadius="10"
+                                          ShadowDepth="0"
+                                          Opacity="0.8"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                            <TextBlock Text=" connected"
+                           VerticalAlignment="Center"
+                           Margin="5,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- System state Anzeige -->
+                    <StackPanel Orientation="Horizontal" Margin="10,8,10,0">
+                        <TextBlock Text="System state:"
+                       Width="110"
+                       FontWeight="SemiBold"/>
+                        <TextBlock x:Name="TxtSystemState"
+                       Text="---"
+                       Foreground="DarkBlue"
+                       FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10,4,10,0">
+                        <TextBlock Text="FOC type:"
+                       Width="110"
+                       FontWeight="SemiBold"/>
+                        <TextBlock x:Name="TxtFocType"
+                       Text="---"
+                       Foreground="DarkBlue"
+                       FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10,4,10,0">
+                        <TextBlock Text="Control type:"
+                       Width="110"
+                       FontWeight="SemiBold"/>
+                        <TextBlock x:Name="TxtControlType"
+                       Text="---"
+                       Foreground="DarkBlue"
+                       FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                </StackPanel>
+            </GroupBox>
+        </Grid>
+    </DockPanel>
+</Window>
+
