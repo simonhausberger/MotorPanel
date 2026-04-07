@@ -1,95 +1,132 @@
-﻿using Syncfusion.UI.Xaml.Gauges;
-using System.IO.Ports;
+﻿using Com_ELF.Models;
+using Com_ELF.Services;
+using Syncfusion.UI.Xaml.Gauges;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Globalization;
+using System.Windows.Threading;
 
 namespace MotorPanel
 {
-    public partial class MainWindow : Window
+    public partial class MotorPanelWindow : Window
     {
-        SerialPort Serial1;
-        const int baudRate = 115200;
+        private readonly JLinkCommanderSettings _jlinkSettings;
+        private readonly string _elfPath;
+        private readonly DispatcherTimer _pollTimer = new();
 
-        const byte StartByte = 0xAA;
-        // new incoming layout: speed(uint16)+torque(uint8)+8*uint16+status(uint8) = 20 bytes payload
-        const int IncomingPayloadSize = 2 + 1 + 8 * 2 + 1; // 20
-        const int PacketSize = 1 + IncomingPayloadSize; // start byte + payload = 21 bytes
+        private Dictionary<string, ElfSymbol> _symbols = new();
+        private readonly Dictionary<string, ReadField> _readFields = new();
+        private readonly HashSet<string> _missingSymbolsLogged = new();
 
-        // target values are read directly from the UI when sending packets
+        private uint _readBlockBaseAddress;
+        private int _readBlockSize;
+        private bool _readLayoutReady;
 
-        ObservableCollection<ChartPoint> idData = new();
-        ObservableCollection<ChartPoint> iqData = new();
-        ObservableCollection<ChartPoint> vdData = new();
-        ObservableCollection<ChartPoint> vqData = new();
-        double time = 0;
-        Stopwatch stopwatch;
-        double baseTime = 0; // time offset to keep X values small
-        bool hasReceivedFirstPacket = false;
-        // previous sent values to detect changes and only send diffs
-        ushort prevTargetSpeed = ushort.MaxValue;
-        byte prevTargetTorque = byte.MaxValue;
-        byte prevFlags = 0xFF;
-        const int MaxPoints = 300;
+        private readonly ObservableCollection<ChartPoint> idData = new();
+        private readonly ObservableCollection<ChartPoint> iqData = new();
+        private readonly ObservableCollection<ChartPoint> vdData = new();
+        private readonly ObservableCollection<ChartPoint> vqData = new();
 
-        public MainWindow()
+        private Stopwatch? stopwatch;
+        private double baseTime = 0.0;
+        private const int MaxPoints = 300;
+
+        private uint? _lastSystemState;
+        private uint? _lastFocType;
+        private uint? _lastFocControllerType;
+
+        // ===== Symbol names from your µC =====
+        private const string SymWeRef = "We_ref";
+        private const string SymWe = "We";
+        private const string SymIqRef = "Iq_ref";
+        private const string SymIq = "Iq";
+        private const string SymId = "Id";
+        private const string SymVd = "Vd";
+        private const string SymVq = "Vq";
+        private const string SymDuty = "Duty";
+        private const string SymPcbTemp = "PCB_Temp";
+        private const string SymBldcTemp = "BLDC_Temp";
+        private const string SymIBUS = "I_Bus";
+        private const string SymVBUS = "V_Bus";
+        private const string SymStart = "Start";
+        private const string SymEnable = "Enable";
+        private const string SymDirectionCw = "Direction_CW";
+        private const string SymFoc = "FOC";
+        private const string SymTorqueControlled = "Torque_Controlled";
+        private const string SymSensored = "Sensored";
+
+        private const string SymSystemState = "system_state";
+        private const string SymFocType = "foc_type";
+        private const string SymFocControllerType = "foc_controller_type";
+
+        public MotorPanelWindow() : this(new JLinkCommanderSettings(), string.Empty)
+        {
+        }
+
+        public MotorPanelWindow(JLinkCommanderSettings settings, string elfPath)
         {
             InitializeComponent();
 
-            // alle verfügbaren COM-Ports abrufen und in combobox füllen
-            string[] ports = SerialPort.GetPortNames();
-            ComboBoxComPorts.ItemsSource = ports;
+            _jlinkSettings = settings;
+            _elfPath = elfPath;
+
+            _pollTimer.Interval = TimeSpan.FromMilliseconds(500);
+            _pollTimer.Tick += PollTimer_Tick;
         }
-        // Try to parse user-entered numbers accepting both ',' and '.' as decimal separators.
+
+        private sealed class ReadField
+        {
+            public required string Name { get; init; }
+            public required WatchDataType DataType { get; init; }
+            public required uint Address { get; init; }
+            public required int Offset { get; init; }
+            public required int ByteCount { get; init; }
+        }
+
+        public class ChartPoint
+        {
+            public double X { get; set; }
+            public double Y { get; set; }
+        }
+
         private bool TryParseUserDouble(string text, out double value)
         {
             value = 0.0;
             if (string.IsNullOrWhiteSpace(text))
                 return false;
 
-            // 1) Try with current culture (preferred)
             if (double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value))
                 return true;
 
-            // 2) Try invariant culture
             if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
                 return true;
 
-            // 3) Replace comma with dot and try invariant (accept German-style input on systems expecting dot)
             string alt = text.Replace(',', '.');
             if (double.TryParse(alt, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
                 return true;
 
-            // 4) Replace dot with comma and try current culture (accept dot on systems expecting comma)
             alt = text.Replace('.', ',');
             if (double.TryParse(alt, NumberStyles.Float, CultureInfo.CurrentCulture, out value))
                 return true;
 
             return false;
         }
-        public class ChartPoint
-        {
-            public double X { get; set; }
-            public double Y { get; set; }
-        }
+
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            BtnConnect.IsEnabled = true;
-            BtnDisconnect.IsEnabled = false;
-            txtbTargetIq.IsEnabled = false;     // weil in speed-Regelung gestartet wird
-
             LogEvent("motor-panel opened");
             await StartupSelfTest();
 
-            // start stopwatch to provide accurate X axis timing (seconds)
+            _pollTimer.Start();
+
             stopwatch = Stopwatch.StartNew();
 
-            // Listen mit chart verbinden, damit die Datenpunkte angezeigt werden können (z. B. Id, Iq, vd, vq)
             IdSeries.ItemsSource = idData;
             IdSeries.XBindingPath = "X";
             IdSeries.YBindingPath = "Y";
@@ -105,25 +142,219 @@ namespace MotorPanel
             vqSeries.ItemsSource = vqData;
             vqSeries.XBindingPath = "X";
             vqSeries.YBindingPath = "Y";
+
+            try
+            {
+                ReloadSymbolsAndBuildReadLayout();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("ELF load failed: " + ex.Message,
+                                "ELF error",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                LogEvent("ELF load failed: " + ex.Message);
+            }
         }
-        // -------------- startup animation: LEDs blinken, Zeiger auf max fahren, LinearPointer animieren, alles zurücksetzen ---------------
+
+        private void ReloadSymbolsAndBuildReadLayout()
+        {
+            if (string.IsNullOrWhiteSpace(_elfPath) || !File.Exists(_elfPath))
+                throw new FileNotFoundException("ELF file not found.", _elfPath);
+
+            _symbols = ElfSymbolReader.ReadObjectSymbols(_elfPath)
+                                      .GroupBy(s => s.Name)
+                                      .Select(g => g.First())
+                                      .ToDictionary(s => s.Name, s => s);
+
+            LogEvent($"Loaded {_symbols.Count} ELF symbols.");
+
+            BuildReadLayout();
+        }
+
+        private void BuildReadLayout()
+        {
+            _readFields.Clear();
+            _missingSymbolsLogged.Clear();
+
+            var definitions = new Dictionary<string, WatchDataType>
+            {
+                [SymWeRef] = WatchDataType.Float,
+                [SymWe] = WatchDataType.Float,
+                [SymIqRef] = WatchDataType.Float,
+                [SymIq] = WatchDataType.Float,
+                [SymId] = WatchDataType.Float,
+                [SymVd] = WatchDataType.Float,
+                [SymVq] = WatchDataType.Float,
+                [SymDuty] = WatchDataType.Float,
+                [SymPcbTemp] = WatchDataType.Float,
+                [SymBldcTemp] = WatchDataType.Float,
+                [SymIBUS] = WatchDataType.Float,
+                [SymVBUS] = WatchDataType.Float,
+
+                [SymEnable] = WatchDataType.UInt8,
+                [SymDirectionCw] = WatchDataType.UInt8,
+                [SymFoc] = WatchDataType.UInt8,
+                [SymSensored] = WatchDataType.UInt8,
+                [SymTorqueControlled] = WatchDataType.UInt8,
+                [SymStart] = WatchDataType.UInt8,
+
+                [SymSystemState] = WatchDataType.UInt32,
+                [SymFocType] = WatchDataType.UInt32,
+                [SymFocControllerType] = WatchDataType.UInt32
+            };
+
+            var present = new List<(string Name, ElfSymbol Symbol, WatchDataType Type, int ByteCount)>();
+
+            foreach (var def in definitions)
+            {
+                if (_symbols.TryGetValue(def.Key, out var symbol))
+                {
+                    int byteCount = ValueCodec.GetByteCount(def.Value);
+                    present.Add((def.Key, symbol, def.Value, byteCount));
+                }
+                else
+                {
+                    LogMissingSymbolOnce(def.Key);
+                }
+            }
+
+            if (present.Count == 0)
+                throw new InvalidOperationException("None of the expected GUI symbols were found in the ELF.");
+
+            _readBlockBaseAddress = present.Min(p => p.Symbol.Address);
+            uint maxEnd = present.Max(p => p.Symbol.Address + (uint)p.ByteCount);
+            _readBlockSize = checked((int)(maxEnd - _readBlockBaseAddress));
+
+            foreach (var item in present)
+            {
+                _readFields[item.Name] = new ReadField
+                {
+                    Name = item.Name,
+                    DataType = item.Type,
+                    Address = item.Symbol.Address,
+                    Offset = checked((int)(item.Symbol.Address - _readBlockBaseAddress)),
+                    ByteCount = item.ByteCount
+                };
+            }
+
+            _readLayoutReady = true;
+
+            LogEvent($"Prepared J-Link read block: 0x{_readBlockBaseAddress:X8} .. 0x{maxEnd - 1:X8} ({_readBlockSize} bytes)");
+        }
+
+        private void LogMissingSymbolOnce(string name)
+        {
+            if (_missingSymbolsLogged.Add(name))
+                LogEvent($"ELF symbol not found: {name}");
+        }
+
+        private bool TryGetField(string symbolName, out ReadField field)
+        {
+            if (_readFields.TryGetValue(symbolName, out field!))
+                return true;
+
+            LogMissingSymbolOnce(symbolName);
+            return false;
+        }
+
+        private bool TryReadFloatFromBlock(byte[] block, string symbolName, out float value)
+        {
+            value = 0.0f;
+
+            if (!TryGetField(symbolName, out var field))
+                return false;
+
+            if (field.DataType != WatchDataType.Float)
+                return false;
+
+            if (field.Offset + 4 > block.Length)
+                return false;
+
+            value = BitConverter.ToSingle(block, field.Offset);
+            return true;
+        }
+
+        private bool TryReadUInt8FromBlock(byte[] block, string symbolName, out byte value)
+        {
+            value = 0;
+
+            if (!TryGetField(symbolName, out var field))
+                return false;
+
+            if (field.DataType != WatchDataType.UInt8)
+                return false;
+
+            if (field.Offset + 1 > block.Length)
+                return false;
+
+            value = block[field.Offset];
+            return true;
+        }
+
+        private bool TryReadUInt32FromBlock(byte[] block, string symbolName, out uint value)
+        {
+            value = 0;
+
+            if (!TryGetField(symbolName, out var field))
+                return false;
+
+            if (field.DataType != WatchDataType.UInt32)
+                return false;
+
+            if (field.Offset + 4 > block.Length)
+                return false;
+
+            value = BitConverter.ToUInt32(block, field.Offset);
+            return true;
+        }
+
+        private async Task WriteFloatAsync(string symbolName, float value)
+        {
+            if (!_symbols.TryGetValue(symbolName, out var symbol))
+                throw new InvalidOperationException($"ELF symbol not found: {symbolName}");
+
+            var client = new JLinkCommanderClient(_jlinkSettings);
+            byte[] raw = ValueCodec.ParseValue(value.ToString(CultureInfo.InvariantCulture), WatchDataType.Float);
+            await client.WriteScalarAsync(symbol.Address, raw);
+        }
+
+        private async Task WriteUInt8Async(string symbolName, byte value)
+        {
+            if (!_symbols.TryGetValue(symbolName, out var symbol))
+                throw new InvalidOperationException($"ELF symbol not found: {symbolName}");
+
+            var client = new JLinkCommanderClient(_jlinkSettings);
+            byte[] raw = ValueCodec.ParseValue(value.ToString(), WatchDataType.UInt8);
+            await client.WriteScalarAsync(symbol.Address, raw);
+        }
+
+        private async Task WriteUInt32Async(string symbolName, uint value)
+        {
+            if (!_symbols.TryGetValue(symbolName, out var symbol))
+                throw new InvalidOperationException($"ELF symbol not found: {symbolName}");
+
+            var client = new JLinkCommanderClient(_jlinkSettings);
+            byte[] raw = ValueCodec.ParseValue(value.ToString(), WatchDataType.UInt32);
+            await client.WriteScalarAsync(symbol.Address, raw);
+        }
+
         private async Task StartupSelfTest()
         {
-            // LEDs blinken
             LedError.Fill = Brushes.Red;
             LedWarning.Fill = Brushes.Orange;
             LedEnabled.Fill = Brushes.Green;
             LedConnected.Fill = Brushes.Green;
 
             Ellipse[] leds = { LedError, LedWarning, LedEnabled, LedConnected };
-            for (int i = 0; i < 3; i++) // 3 Blinkzyklen
+            for (int i = 0; i < 3; i++)
             {
                 foreach (var led in leds) led.Visibility = Visibility.Visible;
                 await Task.Delay(200);
                 foreach (var led in leds) led.Visibility = Visibility.Hidden;
                 await Task.Delay(200);
             }
-            // alle wieder sichtbar (oder nur Enabled/Connected?)
+
             LedError.Visibility = Visibility.Visible;
             LedWarning.Visibility = Visibility.Visible;
             LedEnabled.Visibility = Visibility.Visible;
@@ -134,19 +365,15 @@ namespace MotorPanel
             LedEnabled.Fill = Brushes.WhiteSmoke;
             LedConnected.Fill = Brushes.WhiteSmoke;
 
-            // CircularPointer auf Max fahren
             AnimatePointer(NeedleSpeed, 2000);
             AnimatePointer(PointerSpeed, 2000);
             AnimatePointer(NeedleTorque, 2.5);
             AnimatePointer(PointerTorque, 2.5);
             AnimatePointer(NeedleIBus, 40);
-            //AnimatePointer(PointerIBus, 40);
             AnimatePointer(NeedleVBus, 50);
-            //AnimatePointer(PointerVBus, 50);
 
-            await Task.Delay(500); // kurz stehen lassen
+            await Task.Delay(500);
 
-            // LinearPointer animieren
             await Task.WhenAll(
                 AnimateLinearPointer(PointerPCBTemp, 80),
                 AnimateLinearPointer(BarPCBTemp, 80),
@@ -156,15 +383,12 @@ namespace MotorPanel
 
             await Task.Delay(500);
 
-            // Alles wieder auf 0
             AnimatePointer(NeedleSpeed, 0);
             AnimatePointer(PointerSpeed, 0);
             AnimatePointer(NeedleTorque, 0);
             AnimatePointer(PointerTorque, 0);
             AnimatePointer(NeedleIBus, 0);
-            //AnimatePointer(PointerIBus, 0);
             AnimatePointer(NeedleVBus, 0);
-            //AnimatePointer(PointerVBus, 0);
 
             await Task.WhenAll(
                 AnimateLinearPointer(PointerPCBTemp, 0),
@@ -173,21 +397,24 @@ namespace MotorPanel
                 AnimateLinearPointer(BarWindingTemp, 0)
             );
 
-            // Test-Log
             LogEvent("startup self-test done");
         }
+
         private async void MenuItemSelfTest_Click(object sender, RoutedEventArgs e)
         {
             LogEvent("self-test started");
             await StartupSelfTest();
             LogEvent("self-test finished");
         }
+
         private void AnimatePointer(CircularPointer pointer, double toValue)
         {
-            DoubleAnimation anim = new DoubleAnimation();
-            anim.From = pointer.Value;
-            anim.To = toValue;
-            anim.Duration = TimeSpan.FromMilliseconds(400);
+            DoubleAnimation anim = new()
+            {
+                From = pointer.Value,
+                To = toValue,
+                Duration = TimeSpan.FromMilliseconds(400)
+            };
             pointer.BeginAnimation(CircularPointer.ValueProperty, anim);
         }
 
@@ -203,73 +430,23 @@ namespace MotorPanel
             }
         }
 
-        // -------------------------------------------------------- manage uart-connection ---------------------------------------------------
-        private void BtnConnect_Click(object sender, RoutedEventArgs e)
-        {
-            if (ComboBoxComPorts.SelectedItem == null)
-            {
-                MessageBox.Show("Please select a COM-port!");
-            }
-            else
-            {
-                TryOpenSerialPort(ComboBoxComPorts.SelectedItem.ToString());
-            }
-        }
-        private void BtnDisconnect_Click(object sender, RoutedEventArgs e)
-        {
-            if (Serial1 != null && Serial1.IsOpen)
-            {
-                // unsubscribe event handler before closing/disposing
-                Serial1.DataReceived -= Serial1_DataReceived;
-                Serial1.Close();
-                Serial1.Dispose();
-                Serial1 = null;
-                hasReceivedFirstPacket = false;
-                // clear chart data and baseTime on disconnect to reset X axis
-                idData.Clear();
-                iqData.Clear();
-                vdData.Clear();
-                vqData.Clear();
-                baseTime = 0;
-                LedConnected.Fill = Brushes.WhiteSmoke;
-                LogEvent("serial port closed");
-                BtnConnect.IsEnabled = true;
-                BtnDisconnect.IsEnabled = false;
-            }
-        }
         private void BtnRefresh_Click(object sender, RoutedEventArgs e)
-        {
-            string[] ports = SerialPort.GetPortNames();
-            ComboBoxComPorts.ItemsSource = ports;
-        }
-        void TryOpenSerialPort(string portName)
         {
             try
             {
-                Serial1 = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One);
-                Serial1.DataReceived += Serial1_DataReceived;
-                Serial1.Open(); // Port erfolgreich geöffnet
-                // Reset first-packet flag so X axis will be zeroed at first incoming sample
-                hasReceivedFirstPacket = false;
-                LogEvent("serial port opened");
-                LedConnected.Fill = Brushes.Green;
-                BtnConnect.IsEnabled = false;
-                BtnDisconnect.IsEnabled = true;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                LedConnected.Fill = Brushes.WhiteSmoke;
-                MessageBox.Show($"Port {portName} is already in use!", "connection error", MessageBoxButton.OK, MessageBoxImage.Error);
-                LogEvent($"port {portName} is already in use");
+                ReloadSymbolsAndBuildReadLayout();
+                LogEvent("ELF symbols reloaded.");
             }
             catch (Exception ex)
             {
-                LedConnected.Fill = Brushes.WhiteSmoke;
-                MessageBox.Show($"Error opening {portName}: {ex.Message}","connection error", MessageBoxButton.OK, MessageBoxImage.Error);
-                LogEvent($"error opening {portName}");
+                MessageBox.Show("ELF reload failed: " + ex.Message,
+                                "ELF error",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                LogEvent("ELF reload failed: " + ex.Message);
             }
         }
-        // ------------------------------------------------------- log-event function --------------------------------------------------------
+
         private void LogEvent(string message)
         {
             string timestamp = DateTime.Now.ToString("HH:mm:ss");
@@ -281,370 +458,388 @@ namespace MotorPanel
 
         private void TrimCollectionsIfNeeded()
         {
-            // while any collection exceeds MaxPoints, remove the oldest and shift baseTime
             while (idData.Count > MaxPoints || iqData.Count > MaxPoints || vdData.Count > MaxPoints || vqData.Count > MaxPoints)
             {
-                // find smallest X among oldest entries (they are synchronized by time t)
                 double oldestX = double.MaxValue;
                 if (idData.Count > 0) oldestX = Math.Min(oldestX, idData[0].X);
                 if (iqData.Count > 0) oldestX = Math.Min(oldestX, iqData[0].X);
                 if (vdData.Count > 0) oldestX = Math.Min(oldestX, vdData[0].X);
                 if (vqData.Count > 0) oldestX = Math.Min(oldestX, vqData[0].X);
 
-                if (oldestX == double.MaxValue) break;
+                if (oldestX == double.MaxValue)
+                    break;
 
-                // remove oldest from each collection if present
                 if (idData.Count > 0 && idData[0].X == oldestX) idData.RemoveAt(0);
                 if (iqData.Count > 0 && iqData[0].X == oldestX) iqData.RemoveAt(0);
                 if (vdData.Count > 0 && vdData[0].X == oldestX) vdData.RemoveAt(0);
                 if (vqData.Count > 0 && vqData[0].X == oldestX) vqData.RemoveAt(0);
 
-                // shift remaining points' X to keep values small
                 foreach (var p in idData) p.X -= oldestX;
                 foreach (var p in iqData) p.X -= oldestX;
                 foreach (var p in vdData) p.X -= oldestX;
                 foreach (var p in vqData) p.X -= oldestX;
 
-                // increase baseTime by the removed offset so new t values stay continuous
                 baseTime += oldestX;
             }
         }
-        // ----------------------------------------------------- receiving - event handler ---------------------------------------------------
-        // reihenfolge receiving: speed (unint16), torque (unint8), IBus (unint16), VBus (unint16), PCBTemp (unint16), WindingTemp (unint16), id (unint16), iq (unint16), vd (unint16), vq (unint16), status byte (bit0 = error, bit1 = warning, bit2 = enabled, bits 3..7 reserved)
-        private void Serial1_DataReceived(object sender, SerialDataReceivedEventArgs e)
+
+        private async void PollTimer_Tick(object? sender, EventArgs e)
         {
-            try
-            {
-                while (Serial1.BytesToRead >= PacketSize)
-                {
-                    // Prüfen ob erstes Byte Startbyte ist
-                    if (Serial1.ReadByte() != StartByte)
-                    {
-                        continue; // solange lesen bis 0xAA gefunden wird
-                    }
-
-                    byte[] buffer = new byte[IncomingPayloadSize];
-                    Serial1.Read(buffer, 0, buffer.Length);
-
-                    // Use BeginInvoke to avoid blocking the serial thread
-                    Dispatcher.BeginInvoke((Action)(() =>
-                    {
-                        double elapsed = stopwatch != null ? stopwatch.Elapsed.TotalSeconds : time;
-                        if (!hasReceivedFirstPacket)
-                        {
-                            // set baseTime so first sample X becomes 0
-                            baseTime = elapsed;
-                            hasReceivedFirstPacket = true;
-                        }
-                        double t = elapsed - baseTime;
-
-                        // parse incoming integer-based packet (new layout):
-                        // offsets in buffer (little-endian expected):
-                        // 0-1: uint16 speed (scaled *10)
-                        // 2:   uint8  torque (scaled *10)
-                        // 3-4: uint16 IBus (scaled *10)
-                        // 5-6: uint16 VBus (scaled *10)
-                        // 7-8: uint16 PCBTemp (scaled *10)
-                        // 9-10: uint16 WindingTemp (scaled *10)
-                        // 11-12: uint16 id (scaled *10)
-                        // 13-14: uint16 iq (scaled *10)
-                        // 15-16: uint16 vd (scaled *10)
-                        // 17-18: uint16 vq (scaled *10)
-                        // 19:   uint8 status (bit0=error, bit1=enabled, bit2=warning)
-
-
-                        ushort rawSpeed = BitConverter.ToUInt16(buffer, 0);
-                        double speed = rawSpeed / 10.0;
-
-                        byte rawTorque8 = buffer[2];
-                        double torque = rawTorque8 / 10.0;
-
-                        ushort rawIBus = BitConverter.ToUInt16(buffer, 3);
-                        double iBus = rawIBus / 10.0;
-
-                        ushort rawVBus = BitConverter.ToUInt16(buffer, 5);
-                        double vBus = rawVBus / 10.0;
-
-                        ushort rawPCBTemp = BitConverter.ToUInt16(buffer, 7);
-                        double pcbTemp = rawPCBTemp / 10.0;
-
-                        ushort rawWindingTemp = BitConverter.ToUInt16(buffer, 9);
-                        double windingTemp = rawWindingTemp / 10.0;
-
-                        ushort rawId = BitConverter.ToUInt16(buffer, 11);
-                        double id = rawId / 10.0;
-
-                        ushort rawIq = BitConverter.ToUInt16(buffer, 13);
-                        double iq = rawIq / 10.0;
-
-                        ushort rawVd = BitConverter.ToUInt16(buffer, 15);
-                        double vd = rawVd / 10.0;
-
-                        ushort rawVq = BitConverter.ToUInt16(buffer, 17);
-                        double vq = rawVq / 10.0;
-
-                        byte status = buffer[19];
-                        // status bits: bit0 = error, bit1 = enabled, bit2 = warning, bits3..7 reserved
-                        bool errFlag = (status & 0x01) != 0;
-                        bool enabledFlag = (status & 0x02) != 0;
-                        bool warnFlag = (status & 0x04) != 0;
-
-                        // update UI elements
-                        NeedleSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
-                        NeedleSpeed.Value = speed;
-
-                        NeedleTorque.BeginAnimation(CircularPointer.ValueProperty, null);
-                        NeedleTorque.Value = torque;
-
-                        NeedleIBus.BeginAnimation(CircularPointer.ValueProperty, null);
-                        NeedleIBus.Value = iBus;
-
-                        NeedleVBus.BeginAnimation(CircularPointer.ValueProperty, null);
-                        NeedleVBus.Value = vBus;
-
-                        PointerPCBTemp.Value = pcbTemp;
-                        BarPCBTemp.Value = pcbTemp;
-
-                        PointerWindingTemp.Value = windingTemp;
-                        BarWindingTemp.Value = windingTemp;
-
-                        idData.Add(new ChartPoint { X = t, Y = id });
-                        iqData.Add(new ChartPoint { X = t, Y = iq });
-                        vdData.Add(new ChartPoint { X = t, Y = vd });
-                        vqData.Add(new ChartPoint { X = t, Y = vq });
-
-                        // update status LEDs from combined status byte
-                        LedEnabled.Fill = enabledFlag ? Brushes.Green : Brushes.WhiteSmoke;
-                        LedError.Fill = errFlag ? Brushes.Red : Brushes.WhiteSmoke;
-                        LedWarning.Fill = warnFlag ? Brushes.Orange : Brushes.WhiteSmoke;
-
-                        // Trim collections to sliding window and adjust X by removing
-                        // the oldest X (baseTime) so values remain small.
-                        TrimCollectionsIfNeeded();
-
-                        // Additions to the ObservableCollection will notify the chart. Just
-                        // invalidate visuals to ensure redraw.
-                        CurrentChart.InvalidateVisual();
-                        VoltageChart.InvalidateVisual();
-                        if (stopwatch == null)
-                            time += 0.1;
-                    }));
-                }
-            }
-            catch (Exception ex)
-            {
-                // Don't let serial exceptions crash the thread; log to UI if possible
-                try
-                {
-                    Dispatcher.BeginInvoke((Action)(() => LogEvent($"serial receive error: {ex.Message}")));
-                }
-                catch
-                {
-                    // ignore
-                }
-            }
-        }
-        // ----------------------------------------------------- sending packets -------------------------------------------------------------
-        // reihenfolge sending (changed):
-        // - 0xA0: TargetSpeed, uint16, scaling factor 10 (value*10 -> ushort)
-        // - 0xA1: TargetTorque, uint8, scaling factor 100 (value*100 -> byte)
-        // - 0xAA: Flags byte containing all boolean flags (bits assigned below)
-        // sending only changed values (diff-send) to reduce bus traffic
-        private void SendControlPacket()
-        {
-            if (Serial1 == null || !Serial1.IsOpen)
+            if (!_readLayoutReady)
                 return;
 
-            // parse and scale numeric entries (factor 1000)
-            double parsedSpeed = 0.0;
-            double parsedIq = 0.0;
-            TryParseUserDouble(txtbTargetSpeed.Text, out parsedSpeed);
-            TryParseUserDouble(txtbTargetIq.Text, out parsedIq);
-            // New scaling for diff-send protocol
-            // TargetSpeed: factor 10 -> ushort
-            int scaledSpeedInt = (int)Math.Round(parsedSpeed * 10.0);
-            if (scaledSpeedInt < 0) scaledSpeedInt = 0;
-            if (scaledSpeedInt > ushort.MaxValue) scaledSpeedInt = ushort.MaxValue;
-            ushort targetSpeedU16 = (ushort)scaledSpeedInt;
-
-            // TargetTorque (TargetIq): factor 100 -> byte
-            int scaledTorqueInt = (int)Math.Round(parsedIq * 100.0);
-            if (scaledTorqueInt < 0) scaledTorqueInt = 0;
-            if (scaledTorqueInt > byte.MaxValue) scaledTorqueInt = byte.MaxValue;
-            byte targetTorqueByte = (byte)scaledTorqueInt;
-
-            // control flags as unsigned ints: keep previous semantic (checked = torque -> 0, speed -> 1)
-            uint controlMode = SwitchControlMode.IsChecked == true ? 0u : 1u; // checked = torque (0), unchecked = speed (1)
-            uint enableMotor = SwitchEnableMotor.IsChecked == true ? 1u : 0u;
-            uint startStop = SwitchStartStop.IsChecked == true ? 1u : 0u;
-            uint direction = SwitchDirection.IsChecked == true ? 1u : 0u;
-            uint focBlock = SwitchBlockFoc.IsChecked == true ? 1u : 0u;
-            uint sensorMode = SwitchSensor.IsChecked == true ? 1u : 0u;
-
-            // build flags byte (bit assignment):
-            // bit0 = ControlMode (1 = speed, 0 = torque)
-            // bit1 = EnableMotor
-            // bit2 = StartStop
-            // bit3 = Direction
-            // bit4 = FOC/Block
-            // bit5 = SensorMode
-            // bits6..7 reserved = 0
-            byte flags = (byte)(((controlMode == 1u) ? 1u : 0u)
-                                | (enableMotor << 1)
-                                | (startStop << 2)
-                                | (direction << 3)
-                                | (focBlock << 4)
-                                | (sensorMode << 5));
+            _pollTimer.Stop();
 
             try
             {
-                // send only changed values
-                // 0xA0: TargetSpeed (2 bytes)
-                if (prevTargetSpeed != targetSpeedU16)
+                var client = new JLinkCommanderClient(_jlinkSettings);
+                byte[] block = await client.ReadMemoryAsync(_readBlockBaseAddress, _readBlockSize);
+
+                double t = stopwatch?.Elapsed.TotalSeconds ?? 0.0;
+                t -= baseTime;
+
+                // We -> actual speed
+                if (TryReadFloatFromBlock(block, SymWe, out float we))
                 {
-                    byte[] pkt = new byte[3]; // 1 + 2
-                    pkt[0] = 0xA0;
-                    byte[] b = BitConverter.GetBytes(targetSpeedU16);
-                    if (!BitConverter.IsLittleEndian) Array.Reverse(b);
-                    // copy two bytes little-endian
-                    pkt[1] = b[0];
-                    pkt[2] = b[1];
-                    lock (Serial1) { Serial1.Write(pkt, 0, pkt.Length); }
-                    LogEvent($"sent TargetSpeed (A0) {targetSpeedU16}");
-                    prevTargetSpeed = targetSpeedU16;
+                    NeedleSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
+                    NeedleSpeed.Value = we;
                 }
 
-                // 0xA1: TargetTorque (1 byte)
-                if (prevTargetTorque != targetTorqueByte)
+                // We_ref -> target speed
+                if (TryReadFloatFromBlock(block, SymWeRef, out float weRef))
                 {
-                    byte[] pkt = new byte[1 + 1];
-                    pkt[0] = 0xA1;
-                    pkt[1] = targetTorqueByte;
-                    lock (Serial1) { Serial1.Write(pkt, 0, pkt.Length); }
-                    LogEvent($"sent TargetTorque (A1) {targetTorqueByte}");
-                    prevTargetTorque = targetTorqueByte;
+                    PointerSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
+                    PointerSpeed.Value = weRef;
                 }
 
-                // 0xAA: flags byte
-                if (prevFlags != flags)
+                // Iq -> actual torque/current
+                if (TryReadFloatFromBlock(block, SymIq, out float iq))
                 {
-                    byte[] pkt = new byte[1 + 1];
-                    pkt[0] = 0xAA;
-                    pkt[1] = flags;
-                    lock (Serial1) { Serial1.Write(pkt, 0, pkt.Length); }
-                    LogEvent($"sent Flags (AA) 0x{flags:X2}");
-                    prevFlags = flags;
+                    NeedleTorque.BeginAnimation(CircularPointer.ValueProperty, null);
+                    NeedleTorque.Value = iq;
+                    iqData.Add(new ChartPoint { X = t, Y = iq });
+                }
+
+                // Iq_ref -> target torque/current
+                if (TryReadFloatFromBlock(block, SymIqRef, out float iqRef))
+                {
+                    PointerTorque.BeginAnimation(CircularPointer.ValueProperty, null);
+                    PointerTorque.Value = iqRef;
+                }
+
+                // Id -> chart
+                if (TryReadFloatFromBlock(block, SymId, out float id))
+                {
+                    idData.Add(new ChartPoint { X = t, Y = id });
+                }
+
+                // Vd -> chart
+                if (TryReadFloatFromBlock(block, SymVd, out float vd))
+                {
+                    vdData.Add(new ChartPoint { X = t, Y = vd });
+                }
+
+                // Vq -> chart
+                if (TryReadFloatFromBlock(block, SymVq, out float vq))
+                {
+                    vqData.Add(new ChartPoint { X = t, Y = vq });
+                }
+
+                // PCB temperature
+                if (TryReadFloatFromBlock(block, SymPcbTemp, out float pcbTemp))
+                {
+                    PointerPCBTemp.Value = pcbTemp;
+                    BarPCBTemp.Value = pcbTemp;
+                }
+
+                // BLDC / winding temperature
+                if (TryReadFloatFromBlock(block, SymBldcTemp, out float bldcTemp))
+                {
+                    PointerWindingTemp.Value = bldcTemp;
+                    BarWindingTemp.Value = bldcTemp;
+                }
+
+                // I_Bus
+                if (TryReadFloatFromBlock(block, SymIBUS, out float ibus))
+                {
+                    NeedleIBus.BeginAnimation(CircularPointer.ValueProperty, null);
+                    NeedleIBus.Value = ibus;
+                }
+
+                // V_Bus
+                if (TryReadFloatFromBlock(block, SymVBUS, out float vbus))
+                {
+                    NeedleVBus.BeginAnimation(CircularPointer.ValueProperty, null);
+                    NeedleVBus.Value = vbus;
+                }
+
+                // UInt8 vars
+                if (TryReadUInt8FromBlock(block, SymEnable, out byte enable))
+                {
+                    SwitchEnableMotor.IsChecked = enable != 0;
+                    LedEnabled.Fill = enable != 0 ? Brushes.Green : Brushes.WhiteSmoke;
+                }
+
+                if (TryReadUInt8FromBlock(block, SymDirectionCw, out byte directionCw))
+                {
+                    SwitchDirection.IsChecked = directionCw != 0;
+                }
+
+                if (TryReadUInt8FromBlock(block, SymFoc, out byte foc))
+                {
+                    SwitchBlockFoc.IsChecked = foc != 0;
+                }
+
+                if (TryReadUInt8FromBlock(block, SymTorqueControlled, out byte torqueControlled))
+                {
+                    bool torqueMode = torqueControlled != 0;
+                    SwitchControlMode.IsChecked = torqueMode;
+                    txtbTargetSpeed.IsEnabled = !torqueMode;
+                    txtbTargetIq.IsEnabled = torqueMode;
+                }
+
+                if (TryReadUInt8FromBlock(block, SymStart, out byte start))
+                {
+                    SwitchStartStop.IsChecked = start != 0;
+                }
+
+                // Enum values
+                if (TryReadUInt32FromBlock(block, SymSystemState, out uint systemState))
+                {
+                    ApplySystemState(systemState);
+                }
+
+                if (TryReadUInt32FromBlock(block, SymFocType, out uint focType))
+                {
+                    ApplyFocType(focType);
+                }
+
+                if (TryReadUInt32FromBlock(block, SymFocControllerType, out uint focControllerType))
+                {
+                    ApplyFocControllerType(focControllerType);
+                }
+
+                TrimCollectionsIfNeeded();
+
+                CurrentChart.InvalidateVisual();
+                VoltageChart.InvalidateVisual();
+            }
+            catch (Exception ex)
+            {
+                LogEvent("poll error: " + ex.Message);
+            }
+            finally
+            {
+                _pollTimer.Start();
+            }
+        }
+
+        private void ApplySystemState(uint state)
+        {
+            string stateName = GetSystemStateName(state);
+
+            TxtSystemState.Text = $"{stateName} ({state})";
+
+            if (_lastSystemState != state)
+            {
+                _lastSystemState = state;
+                LogEvent($"system_state = {stateName} ({state})");
+            }
+
+            bool isFault = state == 14;
+            bool isTransition = state is 1 or 2 or 4 or 5 or 7 or 8 or 9 or 11 or 12 or 13;
+
+            LedError.Fill = isFault ? Brushes.Red : Brushes.WhiteSmoke;
+            LedWarning.Fill = (!isFault && isTransition) ? Brushes.Orange : Brushes.WhiteSmoke;
+
+            if (isFault)
+                TxtSystemState.Foreground = Brushes.Red;
+            else if (isTransition)
+                TxtSystemState.Foreground = Brushes.DarkOrange;
+            else
+                TxtSystemState.Foreground = Brushes.DarkGreen;
+        }
+
+        private void ApplyFocType(uint focType)
+        {
+            string text = focType == 0 ? "FOC_SENSORED" : "FOC_SENSORLESS";
+            TxtFocType.Text = $"{text} ({focType})";
+
+            if (_lastFocType != focType)
+            {
+                _lastFocType = focType;
+                LogEvent($"foc_type = {text} ({focType})");
+            }
+
+            SwitchSensor.IsChecked = focType != 0;
+        }
+
+        private void ApplyFocControllerType(uint controllerType)
+        {
+            string text = controllerType == 0 ? "FOC_IQ_CONTROLLED" : "FOC_SPEED_CONTROLLED";
+            TxtControlType.Text = $"{text} ({controllerType})";
+
+            if (_lastFocControllerType != controllerType)
+            {
+                _lastFocControllerType = controllerType;
+                LogEvent($"foc_controller_type = {text} ({controllerType})");
+            }
+
+            bool torqueMode = controllerType == 0;
+            SwitchControlMode.IsChecked = torqueMode;
+            txtbTargetSpeed.IsEnabled = !torqueMode;
+            txtbTargetIq.IsEnabled = torqueMode;
+        }
+
+        private static string GetSystemStateName(uint state) => state switch
+        {
+            0 => "SYSTEM_OFF",
+            1 => "SYSTEM_INIT",
+            2 => "SYSTEM_ENABLE",
+            3 => "SYSTEM_READY",
+            4 => "SYSTEM_STARTUP_FOC_PREALIGN",
+            5 => "SYSTEM_STARTUP_FOC_OPENLOOP",
+            6 => "SYSTEM_RUN_FOC",
+            7 => "SYSTEM_SHUTDOWN_FOC_CMD",
+            8 => "SYSTEM_SHUTDOWN_FOC",
+            9 => "SYSTEM_STARTUP_BLOCK",
+            10 => "SYSTEM_RUN_BLOCK",
+            11 => "SYSTEM_SHUTDOWN_BLOCK_CMD",
+            12 => "SYSTEM_SHUTDOWN_BLOCK",
+            13 => "SYSTEM_DISABLE",
+            14 => "SYSTEM_FAULT",
+            _ => "UNKNOWN"
+        };
+
+        private async void BtnApplyTarget_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (TryParseUserDouble(txtbTargetSpeed.Text, out double speed))
+                {
+                    await WriteFloatAsync(SymWeRef, (float)speed);
+                    LogEvent($"wrote {SymWeRef} = {speed}");
+                }
+
+                if (TryParseUserDouble(txtbTargetIq.Text, out double torque))
+                {
+                    await WriteFloatAsync(SymIqRef, (float)torque);
+                    LogEvent($"wrote {SymIqRef} = {torque}");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error sending packet to µC: {ex.Message}", "serial error", MessageBoxButton.OK, MessageBoxImage.Error);
-                LogEvent($"control packet send error: {ex.Message}");
+                MessageBox.Show("Write error: " + ex.Message,
+                                "J-Link write",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                LogEvent("write error: " + ex.Message);
             }
         }
 
-        // -------------------------------------------------------- buttons ------------------------------------------------------------------
-        private void BtnApplyTarget_Click(object sender, RoutedEventArgs e)
+
+
+        private async void SwitchEnableMotor_Click(object sender, RoutedEventArgs e)
         {
-            // values are read directly from the UI inside SendControlPacket
-            SendControlPacket();
+            bool on = SwitchEnableMotor.IsChecked == true;
+            try
+            {
+                await WriteUInt8Async(SymEnable, on ? (byte)1 : (byte)0);
+                LogEvent(on ? "Enable = 1" : "Enable = 0");
+            }
+            catch (Exception ex)
+            {
+                LogEvent("write error: " + ex.Message);
+            }
         }
 
-        private void SwitchControlMode_Click(object sender, RoutedEventArgs e)
+        private async void SwitchStartStop_Click(object sender, RoutedEventArgs e)
         {
-            if(SwitchControlMode.IsChecked == true) // Iq-Regelung
+            bool on = SwitchStartStop.IsChecked == true;
+            try
             {
-                LogEvent("switched to torque control (just in FOC available)");
-                SwitchBlockFoc.IsChecked = true;   // hier keine Blockkommutierung möglich
-                SwitchBlockFoc.IsEnabled = false;
-                txtbTargetSpeed.IsEnabled = false;
-                txtbTargetIq.IsEnabled = true;
-
-                
+                await WriteUInt8Async(SymStart, on ? (byte)1 : (byte)0);
+                LogEvent(on ? "Start = 1" : "Start = 0");
             }
-            else     // speed-Regelung
+            catch (Exception ex)
             {
-                LogEvent("switched to speed control (FOC keeps activated)");
-                SwitchBlockFoc.IsEnabled = true;
-                txtbTargetSpeed.IsEnabled = true;
-                txtbTargetIq.IsEnabled = false;
-
-                
+                LogEvent("write error: " + ex.Message);
             }
-
-            SendControlPacket();
         }
 
-        private void SwitchEnableMotor_Click(object sender, RoutedEventArgs e)
+        private async void SwitchDirection_Click(object sender, RoutedEventArgs e)
         {
-            if(SwitchEnableMotor.IsChecked == true)
+            bool cw = SwitchDirection.IsChecked == true;
+            try
             {
-                LogEvent("motor enabled");
-                LedEnabled.Fill = Brushes.Green;
+                await WriteUInt8Async(SymDirectionCw, cw ? (byte)1 : (byte)0);
+                LogEvent(cw ? "Direction_CW = 1" : "Direction_CW = 0");
             }
-            else
+            catch (Exception ex)
             {
-                LogEvent("motor disabled");
-                LedEnabled.Fill = Brushes.WhiteSmoke;
+                LogEvent("write error: " + ex.Message);
             }
-
-            SendControlPacket();
         }
 
-        private void SwitchStartStop_Click(object sender, RoutedEventArgs e)
+        private async void SwitchBlockFoc_Click(object sender, RoutedEventArgs e)
         {
-            if (SwitchStartStop.IsChecked == true)            
+            bool foc = SwitchBlockFoc.IsChecked == true;
+            try
             {
-                LogEvent("motor started");
+                await WriteUInt8Async(SymFoc, foc ? (byte)1 : (byte)0);
+                LogEvent(foc ? "FOC = 1" : "FOC = 0");
             }
-            else
+            catch (Exception ex)
             {
-                LogEvent("motor stopped");
+                LogEvent("write error: " + ex.Message);
             }
-
-            SendControlPacket();
         }
 
-        private void SwitchDirection_Click(object sender, RoutedEventArgs e)
+        private async void SwitchControlMode_Click(object sender, RoutedEventArgs e)
         {
-            if (SwitchDirection.IsChecked == true)
-            {
-                LogEvent("direction: right");
-            }
-            else
-            {
-                LogEvent("direction: left");
-            }
+            bool torqueMode = SwitchControlMode.IsChecked == true;
 
-            SendControlPacket();
+            try
+            {
+                // uint8 flag
+                await WriteUInt8Async(SymTorqueControlled, torqueMode ? (byte)1 : (byte)0);
+
+                // enum mirror: 0 = torque controlled, 1 = speed controlled
+                await WriteUInt32Async(SymFocControllerType, torqueMode ? 0u : 1u);
+
+                if (torqueMode)
+                {
+                    LogEvent("torque control selected");
+                    txtbTargetSpeed.IsEnabled = false;
+                    txtbTargetIq.IsEnabled = true;
+                }
+                else
+                {
+                    LogEvent("speed control selected");
+                    txtbTargetSpeed.IsEnabled = true;
+                    txtbTargetIq.IsEnabled = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogEvent("write error: " + ex.Message);
+            }
         }
 
-        private void SwitchBlockFoc_Click(object sender, RoutedEventArgs e)
+        private async void SwitchSensor_Click(object sender, RoutedEventArgs e)
         {
-            if (SwitchBlockFoc.IsChecked == true)
-            {
-                LogEvent("FOC activated");
-            }
-            else
-            {
-                LogEvent("block-commutation activated");
-            }
+            bool sensored = SwitchSensor.IsChecked == true;
 
-            SendControlPacket();
-        }
-
-        private void SwitchSensor_Click(object sender, RoutedEventArgs e)
-        {
-            if(SwitchSensor.IsChecked == true) 
+            try
             {
-                LogEvent("sensorless mode activated");
+                // enum: 0 = sensored, 1 = sensorless
+                await WriteUInt32Async(SymSensored, sensored ? 1u : 0u);
+                LogEvent(sensored ? "FOC_SENSORLESS = 1" : "FOC_SENSORED = 0");
             }
-            else
+            catch (Exception ex)
             {
-                LogEvent("sensored mode activated");
+                LogEvent("write error: " + ex.Message);
             }
-
-            SendControlPacket();
         }
 
         private void txtbTargetSpeed_TextChanged(object sender, TextChangedEventArgs e)
@@ -657,20 +852,8 @@ namespace MotorPanel
 
             if (TryParseUserDouble(txtbTargetSpeed.Text, out double speed))
             {
-                if (speed >= 0 && speed <= 2000)
-                {
-                    // set reference pointer directly so it stays at the entered target
-                    PointerSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
-                    PointerSpeed.Value = speed;
-                }
-                else
-                {
-                    MessageBox.Show("The value must be between 0 and 2000.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please enter a valid number.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                PointerSpeed.BeginAnimation(CircularPointer.ValueProperty, null);
+                PointerSpeed.Value = speed;
             }
         }
 
@@ -684,29 +867,19 @@ namespace MotorPanel
 
             if (TryParseUserDouble(txtbTargetIq.Text, out double iq))
             {
-                if (iq >= 0 && iq <= 2.5)
-                {
-                    AnimatePointer(PointerTorque, iq);
-                }
-                else
-                {
-                    MessageBox.Show("The value must be between 0 and 5.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please enter a valid number.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                PointerTorque.BeginAnimation(CircularPointer.ValueProperty, null);
+                PointerTorque.Value = iq;
             }
         }
 
         private void info_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("info text", "info", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("ELF + J-Link mode active.", "info", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void help_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("help text", "help", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Controls now read and write directly through ELF symbol addresses via J-Link.", "help", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }

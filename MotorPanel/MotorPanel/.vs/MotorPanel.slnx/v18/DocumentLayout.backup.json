@@ -1,18 +1,34 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\",
+  "WorkspaceRootPath": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\simoh\\onedrive - htl anichstrasse\\diplomarbeit_infineon\\c_kleinlercher\\motorpanel\\motorpanel\\motorpanel\\motorpanel\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\matthias\\desktop\\4ahet\\dipl\\gui\\gui_motorpanel\\motorpanel\\motorpanel\\motorpanel\\motorpanelfoc.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\motorpanelfoc.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\simoh\\onedrive - htl anichstrasse\\diplomarbeit_infineon\\c_kleinlercher\\motorpanel\\motorpanel\\motorpanel\\motorpanel\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\matthias\\desktop\\4ahet\\dipl\\gui\\gui_motorpanel\\motorpanel\\motorpanel\\motorpanel\\motorpanelblock.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\motorpanelblock.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\simoh\\onedrive - htl anichstrasse\\diplomarbeit_infineon\\c_kleinlercher\\motorpanel\\motorpanel\\motorpanel\\motorpanel\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\matthias\\desktop\\4ahet\\dipl\\gui\\gui_motorpanel\\motorpanel\\motorpanel\\motorpanel\\motorpanelfoc.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\motorpanelfoc.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\matthias\\desktop\\4ahet\\dipl\\gui\\gui_motorpanel\\motorpanel\\motorpanel\\motorpanel\\motorpanelblock.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\motorpanelblock.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\matthias\\desktop\\4ahet\\dipl\\gui\\gui_motorpanel\\motorpanel\\motorpanel\\motorpanel\\motorpanel\\services\\jlinkcommanderclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\motorpanel\\services\\jlinkcommanderclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\matthias\\desktop\\4ahet\\dipl\\gui\\gui_motorpanel\\motorpanel\\motorpanel\\motorpanel\\setupwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\setupwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|c:\\users\\matthias\\desktop\\4ahet\\dipl\\gui\\gui_motorpanel\\motorpanel\\motorpanel\\motorpanel\\setupwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{AD27331C-9519-A5B0-A35F-07BCE0FBF6A7}|MotorPanel\\MotorPanel.csproj|solutionrelative:motorpanel\\setupwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,49 +38,99 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
             },
             {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "App.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\App.xaml.cs",
-              "RelativeDocumentMoniker": "MotorPanel\\App.xaml.cs",
-              "ToolTip": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\App.xaml.cs*",
-              "RelativeToolTip": "MotorPanel\\App.xaml.cs*",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAACfAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-13T13:40:33.799Z",
-              "EditorCaption": ""
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "MainWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MainWindow.xaml",
-              "RelativeDocumentMoniker": "MotorPanel\\MainWindow.xaml",
-              "ToolTip": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MainWindow.xaml",
-              "RelativeToolTip": "MotorPanel\\MainWindow.xaml",
+              "Title": "MotorPanelFOC.xaml",
+              "DocumentMoniker": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanelFOC.xaml",
+              "RelativeDocumentMoniker": "MotorPanel\\MotorPanelFOC.xaml",
+              "ToolTip": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanelFOC.xaml",
+              "RelativeToolTip": "MotorPanel\\MotorPanelFOC.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-02-12T18:52:20.588Z",
+              "WhenOpened": "2026-03-27T17:27:22.709Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "MainWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MainWindow.xaml.cs",
-              "RelativeDocumentMoniker": "MotorPanel\\MainWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\simoh\\OneDrive - HTL Anichstrasse\\Diplomarbeit_Infineon\\C_KLEINLERCHER\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MainWindow.xaml.cs",
-              "RelativeToolTip": "MotorPanel\\MainWindow.xaml.cs",
-              "ViewState": "AgIAAL4BAAAAAAAAAAD4v/oBAABFAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "MotorPanelFOC.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanelFOC.xaml.cs",
+              "RelativeDocumentMoniker": "MotorPanel\\MotorPanelFOC.xaml.cs",
+              "ToolTip": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanelFOC.xaml.cs",
+              "RelativeToolTip": "MotorPanel\\MotorPanelFOC.xaml.cs",
+              "ViewState": "AgIAAGgCAAAAAAAAAAApwBYCAAAoAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-12T18:52:19.773Z",
+              "WhenOpened": "2026-03-27T17:36:47.394Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "MotorPanelBlock.xaml",
+              "DocumentMoniker": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanelBlock.xaml",
+              "RelativeDocumentMoniker": "MotorPanel\\MotorPanelBlock.xaml",
+              "ToolTip": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanelBlock.xaml",
+              "RelativeToolTip": "MotorPanel\\MotorPanelBlock.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-03-27T10:21:13.524Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "MotorPanelBlock.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanelBlock.xaml.cs",
+              "RelativeDocumentMoniker": "MotorPanel\\MotorPanelBlock.xaml.cs",
+              "ToolTip": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanelBlock.xaml.cs",
+              "RelativeToolTip": "MotorPanel\\MotorPanelBlock.xaml.cs",
+              "ViewState": "AgIAAAsCAAAAAAAAAAAWwD0CAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-27T10:21:52.969Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "SetupWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\SetupWindow.xaml.cs",
+              "RelativeDocumentMoniker": "MotorPanel\\SetupWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\SetupWindow.xaml.cs",
+              "RelativeToolTip": "MotorPanel\\SetupWindow.xaml.cs",
+              "ViewState": "AgIAACwAAAAAAAAAAAAYwEcAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-25T11:16:18.831Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "JLinkCommanderClient.cs",
+              "DocumentMoniker": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\Services\\JLinkCommanderClient.cs",
+              "RelativeDocumentMoniker": "MotorPanel\\MotorPanel\\Services\\JLinkCommanderClient.cs",
+              "ToolTip": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\Services\\JLinkCommanderClient.cs",
+              "RelativeToolTip": "MotorPanel\\MotorPanel\\Services\\JLinkCommanderClient.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAG4AAABrAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-27T16:28:09.752Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "SetupWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\SetupWindow.xaml",
+              "RelativeDocumentMoniker": "MotorPanel\\SetupWindow.xaml",
+              "ToolTip": "C:\\Users\\Matthias\\Desktop\\4AHET\\Dipl\\GUI\\GUI_MotorPanel\\MotorPanel\\MotorPanel\\MotorPanel\\SetupWindow.xaml",
+              "RelativeToolTip": "MotorPanel\\SetupWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-03-25T11:15:45.175Z"
             }
           ]
         }

@@ -1,0 +1,169 @@
+﻿using System.Diagnostics;
+using System.IO;
+using System.Text;
+
+namespace Com_ELF.Services
+{
+    public class JLinkCommanderClient
+    {
+        private readonly JLinkCommanderSettings _settings;
+
+        public JLinkCommanderClient(JLinkCommanderSettings settings)
+        {
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        }
+
+        public async Task TestConnectionAsync(CancellationToken cancellationToken = default)
+        {
+            await Task.Run(() =>
+            {
+                ExecuteCommand("q");
+            }, cancellationToken);
+        }
+
+        public async Task<byte[]> ReadMemoryAsync(uint address, int byteCount)
+        {
+            return await Task.Run(() =>
+            {
+                string output = ExecuteCommand($"mem32 0x{address:X8} {(byteCount + 3) / 4}\nq");
+                return ParseMemoryOutput(output, byteCount);
+            });
+        }
+
+        public async Task WriteScalarAsync(uint address, byte[] data)
+        {
+            await Task.Run(() =>
+            {
+                if (data.Length == 1)
+                {
+                    ExecuteCommand($"w1 0x{address:X8}, 0x{data[0]:X2}\nq");
+                }
+                else if (data.Length == 2)
+                {
+                    ushort value = BitConverter.ToUInt16(data, 0);
+                    ExecuteCommand($"w2 0x{address:X8}, 0x{value:X4}\nq");
+                }
+                else if (data.Length == 4)
+                {
+                    uint value = BitConverter.ToUInt32(data, 0);
+                    ExecuteCommand($"w4 0x{address:X8}, 0x{value:X8}\nq");
+                }
+                else
+                {
+                    throw new InvalidOperationException("Unsupported data length");
+                }
+            });
+        }
+
+        private string ExecuteCommand(string command)
+        {
+            string tempFile = Path.Combine(Path.GetTempPath(), $"jlink_{Guid.NewGuid():N}.jlink");
+
+            try
+            {
+                // Command-File für J-Link anlegen
+                File.WriteAllText(tempFile, command.EndsWith("\n") ? command : command + "\n", Encoding.ASCII);
+
+                var process = new ProcessStartInfo
+                {
+                    FileName = _settings.JLinkExePath,
+                    Arguments =
+                        $"-NoGui 1 " +
+                        $"-ExitOnError 1 " +
+                        $"-Device {_settings.DeviceName} " +
+                        $"-If {_settings.InterfaceName} " +
+                        $"-Speed {_settings.SpeedKHz} " +
+                        $"-AutoConnect 1 " +
+                        $"-CommanderScript \"{tempFile}\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using (var proc = Process.Start(process))
+                {
+                    if (proc == null)
+                        throw new InvalidOperationException("Failed to start J-Link Commander");
+
+                    string output = proc.StandardOutput.ReadToEnd();
+                    string error = proc.StandardError.ReadToEnd();
+
+                    proc.WaitForExit();
+
+                    string fullOutput = output + Environment.NewLine + error;
+
+                    if (proc.ExitCode != 0)
+                        throw new InvalidOperationException(
+                            $"J-Link Commander failed with exit code {proc.ExitCode}{Environment.NewLine}{fullOutput}");
+
+                    return fullOutput;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to execute J-Link command: {ex.Message}", ex);
+            }
+            finally
+            {
+                try
+                {
+                    if (File.Exists(tempFile))
+                        File.Delete(tempFile);
+                }
+                catch
+                {
+                    // Ignorieren
+                }
+            }
+        }
+
+        private byte[] ParseMemoryOutput(string output, int byteCount)
+        {
+            var result = new byte[byteCount];
+
+            try
+            {
+                // Erwartetes Format bei mem32 ist etwa:
+                // 20000000 = 12345678 9ABCDEF0 ...
+                var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                int byteIndex = 0;
+
+                foreach (var line in lines)
+                {
+                    int eqIndex = line.IndexOf('=');
+                    if (eqIndex < 0)
+                        continue;
+
+                    string rightSide = line.Substring(eqIndex + 1).Trim();
+                    var words = rightSide.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    foreach (var word in words)
+                    {
+                        if (uint.TryParse(word, System.Globalization.NumberStyles.HexNumber, null, out uint value))
+                        {
+                            byte[] bytes = BitConverter.GetBytes(value); // little-endian
+
+                            for (int i = 0; i < bytes.Length && byteIndex < byteCount; i++)
+                            {
+                                result[byteIndex++] = bytes[i];
+                            }
+
+                            if (byteIndex >= byteCount)
+                                break;
+                        }
+                    }
+
+                    if (byteIndex >= byteCount)
+                        break;
+                }
+            }
+            catch
+            {
+                // Bei Parse-Fehlern Nullarray zurückgeben
+            }
+
+            return result;
+        }
+    }
+}
