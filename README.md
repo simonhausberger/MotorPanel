@@ -22,6 +22,8 @@ It includes:
 - 🔎 System diagnostics & status monitoring  
 - 📈 Live current, voltage, torque, and temperature plotting  
 
+A newer concept of this project is available here: https://github.com/MatthiasKleinlercher/MotorPanel
+
 ---
 
 ## ⚙️ System Architecture
