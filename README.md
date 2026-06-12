@@ -5,7 +5,6 @@
 HTL Anichstraße  
 Department of Electrical Engineering & Mechatronics  
 Class 5AHET (2025/26)
-test commit
 ---
 
 ## 📂 Repository Scope
